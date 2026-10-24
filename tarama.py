@@ -14,28 +14,28 @@ import yfinance as yf
 COOLDOWN_SECONDS = 3600  # Aynı hisse için 1 saat bekleme süresi
 TZ_TR = pytz.timezone("Europe/Istanbul")
 
-# Ntfy Kanal Ayarı (Orijinal adresin)
+# Ntfy Kanal Ayarı
 NTFY_URL = "https://ntfy.sh/kaptan_78"
 
 # Tek Merkezi Hafıza Dosyası
 MERKEZI_HAFIZA_DOSYASI = "borsa_hafiza_v2.json"
 
-# BIST Tüm Hisseler
+# BIST Hisseleri (Hatalı/Delist olan 6 hisse temizlendi, toplam 441 hisse)
 STOCKS = [
-    "AAVST.IS", "ACSEL.IS", "ADEL.IS", "ADESE.IS", "ADGYO.IS", "AEFES.IS", "AFYON.IS", "AGESA.IS", "AGHOL.IS", "AGROT.IS",
+    "ACSEL.IS", "ADEL.IS", "ADESE.IS", "ADGYO.IS", "AEFES.IS", "AFYON.IS", "AGESA.IS", "AGHOL.IS", "AGROT.IS",
     "AKBNK.IS", "AKENR.IS", "AKFGY.IS", "AKFYE.IS", "AKGRT.IS", "AKMGY.IS", "AKSA.IS", "AKSEN.IS", "AKSGY.IS", "ALARK.IS",
-    "ALBRK.IS", "ALCAR.IS", "ALCTL.IS", "ALFAS.IS", "ALKA.IS", "ALKIM.IS", "ALKLC.IS", "ALMAT.IS", "ANELE.IS", "ANGEN.IS",
+    "ALBRK.IS", "ALCAR.IS", "ALCTL.IS", "ALFAS.IS", "ALKA.IS", "ALKIM.IS", "ALKLC.IS", "ANELE.IS", "ANGEN.IS",
     "ANHYT.IS", "ANSGR.IS", "ARASE.IS", "ARCLK.IS", "ARDYZ.IS", "ARENA.IS", "ARSAN.IS", "ARTMS.IS", "ARZUM.IS", "ASELS.IS",
     "ASTOR.IS", "ASUZU.IS", "ATAKP.IS", "ATATP.IS", "ATEKS.IS", "ATLAS.IS", "AVGYO.IS", "AVOD.IS", "AVPGY.IS", "AYCES.IS",
     "AYDEM.IS", "AYEN.IS", "AYES.IS", "AYGAZ.IS", "AZTEK.IS", "BAGFS.IS", "BAKAB.IS", "BALAT.IS", "BANVT.IS", "BARMA.IS",
     "BASCM.IS", "BASGZ.IS", "BAYRK.IS", "BEGYO.IS", "BERA.IS", "BEYAZ.IS", "BIENY.IS", "BIGCH.IS", "BIMAS.IS", "BINHO.IS",
     "BIOEN.IS", "BIZIM.IS", "BJKAS.IS", "BLCYT.IS", "BMSCH.IS", "BMSTL.IS", "BNTAS.IS", "BOBET.IS", "BORLS.IS", "BOSSA.IS",
     "BRISA.IS", "BRKO.IS", "BRKSN.IS", "BRLSM.IS", "BRMEN.IS", "BRYAT.IS", "BSOKE.IS", "BTCIM.IS", "BUCIM.IS", "BURCE.IS",
-    "BURVA.IS", "BVSAN.IS", "BYDNR.IS", "CANTE.IS", "CASFY.IS", "CCOLA.IS", "CELHA.IS", "CEMAS.IS", "CEMTS.IS", "CEOEM.IS",
+    "BURVA.IS", "BVSAN.IS", "BYDNR.IS", "CANTE.IS", "CCOLA.IS", "CELHA.IS", "CEMAS.IS", "CEMTS.IS", "CEOEM.IS",
     "CGCAM.IS", "CIMSA.IS", "CLEBI.IS", "CMBTN.IS", "CMENT.IS", "CONSE.IS", "COSMO.IS", "CRDFA.IS", "CRFSA.IS", "CUSAN.IS",
     "CVKMD.IS", "CWENE.IS", "DAGI.IS", "DAPGM.IS", "DARDL.IS", "DENGE.IS", "DERHL.IS", "DERIM.IS", "DESA.IS", "DESPC.IS",
-    "DEVA.IS", "DIRIT.IS", "DITAS.IS", "DMRGD.IS", "DMSAS.IS", "DNISI.IS", "DOAS.IS", "DOBUR.IS", "DOCO.IS", "DOGUB.IS",
-    "DOHOL.IS", "DSTAN.IS", "DUNYA.IS", "DURDO.IS", "DYOBY.IS", "DZGYO.IS", "EBEBK.IS", "ECILC.IS", "ECZYT.IS", "EDIP.IS",
+    "DEVA.IS", "DIRIT.IS", "DITAS.IS", "DMRGD.IS", "DMSAS.IS", "DNISI.IS", "DOAS.IS", "DOCO.IS", "DOGUB.IS",
+    "DOHOL.IS", "DURDO.IS", "DYOBY.IS", "DZGYO.IS", "EBEBK.IS", "ECILC.IS", "ECZYT.IS", "EDIP.IS",
     "EGEEN.IS", "EGEPO.IS", "EGGUB.IS", "EGPRO.IS", "EGSER.IS", "EKGYO.IS", "EKOS.IS", "EKSUN.IS", "ELITE.IS", "EMKEL.IS",
     "ENERY.IS", "ENKAI.IS", "ENJSA.IS", "EPLAS.IS", "ERBOS.IS", "EREGL.IS", "ERSU.IS", "ESCAR.IS", "ESCOM.IS", "ESEN.IS",
     "ETILR.IS", "EUHOL.IS", "EUKYO.IS", "EUPWR.IS", "EUREN.IS", "EUYO.IS", "EYGYO.IS", "FADE.IS", "FENER.IS", "FLAP.IS",
@@ -71,20 +71,25 @@ STOCKS = [
 
 
 def calculate_hma(series, period=20):
-  half_per = period // 2
-  sqrt_per = int(np.sqrt(period))
+  try:
+    if not isinstance(series, pd.Series) or len(series) < period:
+      return pd.Series(dtype=float)
+    half_per = period // 2
+    sqrt_per = int(np.sqrt(period))
 
-  def wma(s, p):
-    weights = np.arange(1, p + 1)
-    return s.rolling(p).apply(
-        lambda x: np.dot(x, weights) / weights.sum(), raw=True
-    )
+    def wma(s, p):
+      weights = np.arange(1, p + 1)
+      return s.rolling(p).apply(
+          lambda x: np.dot(x, weights) / weights.sum(), raw=True
+      )
 
-  wma_half = wma(series, half_per)
-  wma_full = wma(series, period)
-  raw_hma = 2 * wma_half - wma_full
-  hma = wma(raw_hma, sqrt_per)
-  return hma
+    wma_half = wma(series, half_per)
+    wma_full = wma(series, period)
+    raw_hma = 2 * wma_half - wma_full
+    hma = wma(raw_hma, sqrt_per)
+    return hma
+  except:
+    return pd.Series(dtype=float)
 
 
 def calculate_mfi(high, low, close, volume, period=14):
@@ -160,20 +165,19 @@ def check_wave_margins(df, lookback=3, threshold_multiplier=0.80):
 
 
 # =========================================================================
-# 🦅 KARTAL 15dk MOTORU (1S DMI>25 Zırhı + 15m Dalga Marjı + RVOL >= 0.6 Sentezi)
+# 🦅 KARTAL 15dk MOTORU
 # =========================================================================
 def scan_kartal_15dk(df_15m, df_1h):
     try:
         if df_15m is None or df_1h is None or len(df_15m) < 35 or len(df_1h) < 35:
             return False
 
-        # 1. MAKRO FİLTRE (1 Saatlik Periyot: Fiyat > HMA20 + +DI > 25 + DMI Üstünlük)
         close_1h = df_1h['Close']
         high_1h = df_1h['High']
         low_1h = df_1h['Low']
         
         hma20_1h = calculate_hma(close_1h, 20)
-        if close_1h.iloc[-1] <= hma20_1h.iloc[-1]:
+        if hma20_1h.empty or close_1h.iloc[-1] <= hma20_1h.iloc[-1]:
             return False
 
         up_move_1h = high_1h.diff()
@@ -195,7 +199,6 @@ def scan_kartal_15dk(df_15m, df_1h):
         if not (di_plus_value_check and (di_crossover or di_above)):
             return False
 
-        # 2. MİKRO OMURGA (15m Periyot: Levent Erol Tam Dalga Marjı Kırılımı + RVOL >= 0.6)
         wave_triggered, _ = check_wave_margins(df_15m, lookback=3, threshold_multiplier=0.80)
         if not wave_triggered:
             return False
@@ -218,7 +221,7 @@ def scan_kartal_15dk(df_15m, df_1h):
         rvol_curr = rvol.iloc[-1] if not pd.isna(rvol.iloc[-1]) and rvol.iloc[-1] > 0 else 1e-5
         
         wave_efficiency = margin_range / rvol_curr
-        rvol_check = rvol_curr >= 0.6  # Erken hacim tetiği
+        rvol_check = rvol_curr >= 0.6
         
         mfi_ser = calculate_mfi(high_15m, low_15m, close_15m, volume_15m, 14)
         mfi_check = (mfi_ser.iloc[-12:] > 70).any()
@@ -254,6 +257,7 @@ def scan_kartal_1s(df):
         return triggered and (wave_efficiency > 0.35)
     except Exception:
         return False
+
 
 def scan_kartal_ozel(df_15m, df_1s):
     try:
@@ -318,7 +322,6 @@ def hafiza_kaydet(hafiza):
 
 
 def piyasa_zaman_kontrolu():
-  # Sadece GitHub Actions üzerinde el ile manuel tetiklendiğinde (FORCE_RUN=true) çalışır.
   if os.environ.get("FORCE_RUN", "false").lower() == "true":
     return True
 
@@ -502,14 +505,15 @@ def run_scanner():
             konum_1h = wave_res_1h[1]
 
             hma20_1h = calculate_hma(close_1h, 20)
-            hma20_1h_curr = hma20_1h.iloc[-1]
+            if not hma20_1h.empty:
+              hma20_1h_curr = hma20_1h.iloc[-1]
 
-            if (close_curr_1h > hma20_1h_curr) and (rsi_1h > 50) and (plus_di_1h > 25) and wave_breakout_1h:
+            if hma20_1h_curr and (close_curr_1h > hma20_1h_curr) and (rsi_1h > 50) and (plus_di_1h > 25) and wave_breakout_1h:
               if kayit_guncelle("1h_dalga_gorsel"):
                 tetiklenen_str.append("1 Saat Yakala")
                 toplam_puan += 25.0
 
-            if (close_curr_1h > hma20_1h_curr) and (rvol_1h >= 2.0) and wave_breakout_1h:
+            if hma20_1h_curr and (close_curr_1h > hma20_1h_curr) and (rvol_1h >= 2.0) and wave_breakout_1h:
               if kayit_guncelle("deli_gitan_1h"):
                 tetiklenen_str.append("DELİRDİ 1 Saat")
                 toplam_puan += 35.0
@@ -546,9 +550,12 @@ def run_scanner():
             senkou_span_a = (tenkan_9 + kijun_26) / 2
 
             hma9_15m = calculate_hma(close_15m, 9)
-            hma9_kesisir_span_a_15m = (hma9_15m.iloc[-2] <= senkou_span_a.iloc[-2]) and (hma9_15m.iloc[-1] > senkou_span_a.iloc[-1])
-            hma9_ustunde_span_a_15m = hma9_15m.iloc[-1] > senkou_span_a.iloc[-1]
-            hma9_esnek_sarti = hma9_kesisir_span_a_15m or hma9_ustunde_span_a_15m
+            if not hma9_15m.empty:
+              hma9_kesisir_span_a_15m = (hma9_15m.iloc[-2] <= senkou_span_a.iloc[-2]) and (hma9_15m.iloc[-1] > senkou_span_a.iloc[-1])
+              hma9_ustunde_span_a_15m = hma9_15m.iloc[-1] > senkou_span_a.iloc[-1]
+              hma9_esnek_sarti = hma9_kesisir_span_a_15m or hma9_ustunde_span_a_15m
+            else:
+              hma9_esnek_sarti = False
 
             di_kesisim_15m = (plus_di_ser_15m.iloc[-2] <= minus_di_ser_15m.iloc[-2]) and (plus_di_ser_15m.iloc[-1] > minus_di_ser_15m.iloc[-1])
             di_15m_kosul = (plus_di_15m > 20.0) or di_kesisim_15m
@@ -559,7 +566,7 @@ def run_scanner():
             hacim_erken_dip_06 = (rvol_15m_dip >= 0.6)
 
             # =========================================================================
-            # 🌿 ÇEKİRGE STRATEJİSİ (Orijinal Saf Sıkışma)
+            # 🌿 ÇEKİRGE STRATEJİSİ
             # =========================================================================
             makro_cekirge_onay = False
             if not df_1h.empty and len(df_1h) >= 35:
@@ -582,7 +589,7 @@ def run_scanner():
                     
                     makro_verimlilik_1h = efficiency_1h > 0.35
                     makro_di_1h = plus_di_1h > 25.0
-                    makro_hma20_1h = guncel_fiyat > hma20_1h_curr
+                    makro_hma20_1h = hma20_1h_curr and (guncel_fiyat > hma20_1h_curr)
                     
                     makro_cekirge_onay = makro_verimlilik_1h and makro_di_1h and makro_hma20_1h
 
@@ -614,7 +621,7 @@ def run_scanner():
             # =========================================================================
 
             # =========================================================================
-            # 🦅 KARTAL 15DK KONTROLÜ (Güncel Sentez Motoru)
+            # 🦅 KARTAL 15DK KONTROLÜ
             # =========================================================================
             if not df_1h.empty:
                 if scan_kartal_15dk(df_15m, df_1h):
@@ -624,7 +631,7 @@ def run_scanner():
             # =========================================================================
 
             # =========================================================================
-            # 🎯 SÜPER 15 CROSS MODÜLÜ (ROC Erken İvme Entegrasyonu)
+            # 🎯 SÜPER 15 CROSS (ROC) MODÜLÜ
             # =========================================================================
             bb_middle_s15 = close_15m.rolling(22).mean()
             bb_std_s15 = close_15m.rolling(22).std()
@@ -632,15 +639,20 @@ def run_scanner():
             bb_lower_s15 = bb_middle_s15 - (2 * bb_std_s15)
 
             bb_width_s15 = bb_upper_s15 - bb_lower_s15
-            is_squeezed_s15 = bb_width_s15.iloc[-2] <= bb_width_s15.rolling(22).min().iloc[-2] * 1.15
+            if isinstance(bb_width_s15, pd.Series) and len(bb_width_s15) >= 22:
+              min_roll = bb_width_s15.rolling(22).min()
+              min_val = min_roll.iloc[-2] if isinstance(min_roll, pd.Series) and len(min_roll) >= 2 else bb_width_s15.iloc[-2]
+              is_squeezed_s15 = bb_width_s15.iloc[-2] <= min_val * 1.15
+            else:
+              is_squeezed_s15 = False
 
             roc_s15 = close_15m.pct_change(periods=2) * 100
-            roc_curr_s15 = roc_s15.iloc[-1] if not np.isnan(roc_s15.iloc[-1]) else 0.0
+            roc_curr_s15 = roc_s15.iloc[-1] if isinstance(roc_s15, pd.Series) and not roc_s15.empty and not np.isnan(roc_s15.iloc[-1]) else 0.0
             son_roc = roc_curr_s15
             is_sudden_burst = roc_curr_s15 >= 1.5
 
             is_bb_breakout = close_15m.iloc[-1] >= bb_upper_s15.iloc[-1]
-            mfi_curr_s15 = mfi_15m.iloc[-1]
+            mfi_curr_s15 = mfi_15m.iloc[-1] if isinstance(mfi_15m, pd.Series) else 50.0
 
             if is_squeezed_s15 and is_bb_breakout and is_sudden_burst and (mfi_curr_s15 > 50.0):
               if kayit_guncelle("super_15_bb_cross"):
@@ -670,9 +682,6 @@ def run_scanner():
                 toplam_puan += 45.0
 
         if tetiklenen_str:
-          if not tetiklenen_str:
-              continue
-
           if toplam_puan == 0:
             toplam_puan = 25.0
 
@@ -690,7 +699,6 @@ def run_scanner():
           has_kartal15_chk = "KARTAL 15DK" in strats_upper_chk
           strat_count_chk = len(tetiklenen_str)
 
-          # Öncelik Sıralaması: 1. Çifte Alarm, 2. Altın Kesişim, 3. Kartal 15dk, vb.
           if has_both_1h_chk:
               ozel_oncelik = 4
           elif has_cekirge_hibrit_chk:
@@ -725,7 +733,6 @@ def run_scanner():
         continue
 
   if toplanan_sinyaller:
-    # Sıralamayı tersine çevirerek istendiği gibi akışı ters akışa uyarlıyoruz
     toplanan_sinyaller.sort(key=lambda x: (x['ozel_oncelik'], len(x['stratejiler']), x['puan']), reverse=False)
 
     grup_boyutu = 3
