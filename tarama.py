@@ -1,572 +1,758 @@
 from datetime import datetime
+import json
+import os
 import time
+import math
+import concurrent.futures
+import numpy as np
 import pandas as pd
+import pytz
 import requests
 import yfinance as yf
 
-# Ntfy Kanal Ayarı
-NTFY_TOPIC = "kaptan_78"
-COOLDOWN_SECONDS = 1800  # Aynı hisse için 30 dakika spam engelleme
-son_bildirimler = {}
+# --- AYARLAR VE SABİTLER ---
+COOLDOWN_SECONDS = 3600  # Aynı hisse için 1 saat bekleme süresi
+TZ_TR = pytz.timezone("Europe/Istanbul")
 
-# BIST Tüm Hisseler (Eksiksiz Tam Liste - 40'arLı Gruplar)
-BIST_GRUPLARI = [
-    # Grup 1
-    [
-        "THYAO.IS",
-        "GARAN.IS",
-        "AKBNK.IS",
-        "EREGL.IS",
-        "KCHOL.IS",
-        "ISCTR.IS",
-        "BIMAS.IS",
-        "YKBNK.IS",
-        "SAHOL.IS",
-        "ASELS.IS",
-        "PETKM.IS",
-        "TUPRS.IS",
-        "SASA.IS",
-        "HEKTS.IS",
-        "KOZAA.IS",
-        "FROTO.IS",
-        "TOASO.IS",
-        "PGSUS.IS",
-        "KRDMD.IS",
-        "SISE.IS",
-        "TAVHL.IS",
-        "ENKAI.IS",
-        "MGROS.IS",
-        "ARCLK.IS",
-        "VESTL.IS",
-        "OYAKC.IS",
-        "ALARK.IS",
-        "ODAS.IS",
-        "KONTR.IS",
-        "GESAN.IS",
-        "ASTOR.IS",
-        "CWENE.IS",
-        "EUPWR.IS",
-        "SDTTR.IS",
-        "YEOTK.IS",
-        "ALFAS.IS",
-        "BRYAT.IS",
-        "CLEBI.IS",
-        "ISGYO.IS",
-        "EKGYO.IS",
-    ],
-    # Grup 2
-    [
-        "ENJSA.IS",
-        "ZOREN.IS",
-        "AKSEN.IS",
-        "BIOEN.IS",
-        "GWIND.IS",
-        "CANTE.IS",
-        "IPEKE.IS",
-        "KOZAL.IS",
-        "GUBRF.IS",
-        "TKFEN.IS",
-        "AGHOL.IS",
-        "ANACM.IS",
-        "ARASE.IS",
-        "AYDEM.IS",
-        "BAGFS.IS",
-        "BANVT.IS",
-        "BSOKE.IS",
-        "CCOLA.IS",
-        "CEMTS.IS",
-        "CIMSA.IS",
-        "DEVA.IS",
-        "ECILC.IS",
-        "EGEEN.IS",
-        "ENERY.IS",
-        "EGEPO.IS",
-        "ERCB.IS",
-        "EKSUN.IS",
-        "FORMT.IS",
-        "GENIL.IS",
-        "GLYHO.IS",
-        "GSDHO.IS",
-        "GOLTS.IS",
-        "GOODY.IS",
-        "GRTRK.IS",
-        "HURGZ.IS",
-        "INVES.IS",
-        "ITTFH.IS",
-        "JANTS.IS",
-        "KAPLM.IS",
-        "KARTN.IS",
-    ],
-    # Grup 3
-    [
-        "KERVT.IS",
-        "KMPUR.IS",
-        "KONYA.IS",
-        "KORDS.IS",
-        "KRPLS.IS",
-        "KRVGD.IS",
-        "LOGO.IS",
-        "LUKSK.IS",
-        "MAVI.IS",
-        "MEDTR.IS",
-        "MERKO.IS",
-        "MIPAZ.IS",
-        "MPARK.IS",
-        "NATEN.IS",
-        "NTHOL.IS",
-        "OBASE.IS",
-        "ONCSM.IS",
-        "OTKAR.IS",
-        "OYLUM.IS",
-        "PAKDM.IS",
-        "PAPIL.IS",
-        "PCILT.IS",
-        "PENGD.IS",
-        "PNSUT.IS",
-        "POLHO.IS",
-        "PRKME.IS",
-        "PSGYO.IS",
-        "QUAGR.IS",
-        "RALYH.IS",
-        "RNPOL.IS",
-        "RTALB.IS",
-        "RYGYO.IS",
-        "SAFKR.IS",
-        "SELEC.IS",
-        "SELVA.IS",
-        "SEYKM.IS",
-        "SMRTG.IS",
-        "SOKM.IS",
-        "TATEN.IS",
-        "TBORG.IS",
-    ],
-    # Grup 4
-    [
-        "TGSAS.IS",
-        "TMPOL.IS",
-        "TMSN.IS",
-        "TRGYO.IS",
-        "TSKB.IS",
-        "TTKOM.IS",
-        "TTRAK.IS",
-        "TUKAS.IS",
-        "TURSG.IS",
-        "UFUK.IS",
-        "ULKER.IS",
-        "ULUUN.IS",
-        "VAKBN.IS",
-        "VAKKO.IS",
-        "VBTYZ.IS",
-        "VERTU.IS",
-        "VKGYO.IS",
-        "VKING.IS",
-        "YAPRK.IS",
-        "YATAS.IS",
-        "YAYLA.IS",
-        "YUNSA.IS",
-        "ZIRAY.IS",
-        "ACSEL.IS",
-        "ADEL.IS",
-        "ADGYO.IS",
-        "AEFES.IS",
-        "AFYON.IS",
-        "AGEHA.IS",
-        "AGROT.IS",
-        "AHGAZ.IS",
-        "AKENR.IS",
-        "AKFGY.IS",
-        "AKFYE.IS",
-        "AKSGY.IS",
-        "AKSUE.IS",
-        "ALBRK.IS",
-        "ALCAR.IS",
-        "ALCTL.IS",
-        "ALKA.IS",
-    ],
-    # Grup 5
-    [
-        "ALTNY.IS",
-        "ANELE.IS",
-        "ANGEN.IS",
-        "ARFYO.IS",
-        "ARSAN.IS",
-        "ARTMS.IS",
-        "ARZUM.IS",
-        "ASUZU.IS",
-        "ATAKP.IS",
-        "ATEKS.IS",
-        "ATLAS.IS",
-        "AVGYO.IS",
-        "AVOD.IS",
-        "AVTUR.IS",
-        "AYCES.IS",
-        "AYEN.IS",
-        "AYES.IS",
-        "AZTEK.IS",
-        "BAKAB.IS",
-        "BALAT.IS",
-        "BARMA.IS",
-        "BASGZ.IS",
-        "BASCM.IS",
-        "BATI.IS",
-        "BERA.IS",
-        "BEYAZ.IS",
-        "BIENY.IS",
-        "BJKAS.IS",
-        "BLCYT.IS",
-        "BMSCH.IS",
-        "BMSTL.IS",
-        "BNTAS.IS",
-        "BOBET.IS",
-        "BORLS.IS",
-        "BOSSA.IS",
-        "BRKO.IS",
-        "BRKSN.IS",
-        "BRMEN.IS",
-        "BRSAN.IS",
-        "BUCIM.IS",
-    ],
-    # Grup 6
-    [
-        "BURCE.IS",
-        "BURVA.IS",
-        "BVSAN.IS",
-        "BYDNR.IS",
-        "CASA.IS",
-        "CATES.IS",
-        "CEFH.IS",
-        "CEMAS.IS",
-        "CEOEM.IS",
-        "CVKMD.IS",
-        "DAPGM.IS",
-        "DARDL.IS",
-        "DENGE.IS",
-        "DERHL.IS",
-        "DERIM.IS",
-        "DESA.IS",
-        "DESPC.IS",
-        "DGNMO.IS",
-        "DIRIT.IS",
-        "DITAS.IS",
-        "DMRGD.IS",
-        "DMSAS.IS",
-        "DNISI.IS",
-        "DOAS.IS",
-        "DOBUR.IS",
-        "DOCO.IS",
-        "DOGUE.IS",
-        "DOHOL.IS",
-        "DOKTA.IS",
-        "DSI.IS",
-        "DURDO.IS",
-        "DYOBY.IS",
-        "DZGYO.IS",
-        "EBEBK.IS",
-        "EDATA.IS",
-        "EDIP.IS",
-        "EGEGY.IS",
-        "EGGUB.IS",
-        "EGPRO.IS",
-        "EGSER.IS",
-    ],
-    # Grup 7
-    [
-        "EMKEL.IS",
-        "ENSRI.IS",
-        "EPLAS.IS",
-        "ERBOS.IS",
-        "ERSU.IS",
-        "ESEN.IS",
-        "ESCOM.IS",
-        "ETILR.IS",
-        "EUHOL.IS",
-        "EUKO.IS",
-        "FADE.IS",
-        "FENER.IS",
-        "FLAP.IS",
-        "FMIZP.IS",
-        "FONET.IS",
-        "FORTE.IS",
-        "FRIGO.IS",
-        "GARFA.IS",
-        "GEDIK.IS",
-        "GENTS.IS",
-        "GEREL.IS",
-        "GESAN.IS",
-        "GIPAS.IS",
-        "GLRYH.IS",
-        "GMTAS.IS",
-        "GOKNR.IS",
-        "GRNYO.IS",
-        "GZNMI.IS",
-        "HATEK.IS",
-        "HDFGS.IS",
-        "HKTM.IS",
-        "HLGYO.IS",
-        "HTTBT.IS",
-        "HUBVC.IS",
-        "ICBCT.IS",
-        "IDEAS.IS",
-        "IHEVA.IS",
-        "IHGZT.IS",
-        "IHLAS.IS",
-        "IHLGM.IS",
-    ],
-    # Grup 8
-    [
-        "IMASM.IS",
-        "INDES.IS",
-        "INFO.IS",
-        "INTEM.IS",
-        "INVEO.IS",
-        "ISATR.IS",
-        "ISBIR.IS",
-        "ISBTR.IS",
-        "ISFIN.IS",
-        "ISKUR.IS",
-        "IZENR.IS",
-        "IZFAS.IS",
-        "IZINV.IS",
-        "KAHMK.IS",
-        "KAKK.IS",
-        "KAYSE.IS",
-        "KFEIN.IS",
-        "KGYO.IS",
-        "KIMMR.IS",
-        "KLGYO.IS",
-        "KLKIM.IS",
-        "KLRHO.IS",
-        "KLMSN.IS",
-        "KMPUR.IS",
-        "KNFRT.IS",
-        "KOCMT.IS",
-        "KOTON.IS",
-        "KRSTL.IS",
-        "KUTPO.IS",
-        "KUVVA.IS",
-        "LIDER.IS",
-        "LKMNH.IS",
-        "MAALT.IS",
-        "MAKIM.IS",
-        "MAKTK.IS",
-        "MANAS.IS",
-        "MARKA.IS",
-        "MARTI.IS",
-        "MACKO.IS",
-        "MEGAP.IS",
-    ],
-    # Grup 9
-    [
-        "MEKAG.IS",
-        "MESAN.IS",
-        "METRO.IS",
-        "METUR.IS",
-        "MHRGY.IS",
-        "MIKRO.IS",
-        "MMCAS.IS",
-        "MNDRS.IS",
-        "MNDTR.IS",
-        "MOBTL.IS",
-        "MTRKS.IS",
-        "MZHLD.IS",
-        "NUGYO.IS",
-        "NUHCM.IS",
-        "OBASE.IS",
-        "ODINE.IS",
-        "OFSYM.IS",
-        "ONRYT.IS",
-        "ORCAY.IS",
-        "ORGE.IS",
-        "OSMEN.IS",
-        "OSTIM.IS",
-        "OTTO.IS",
-        "OYYAT.IS",
-        "OZAKG.IS",
-        "OZRDN.IS",
-        "OZSUB.IS",
-        "PAGYO.IS",
-        "PAMEL.IS",
-        "PARDUS.IS",
-        "PARSN.IS",
-        "PATEK.IS",
-        "PEKGY.IS",
-        "PENTA.IS",
-        "PKART.IS",
-        "PKENT.IS",
-        "PNLSN.IS",
-        "POLTK.IS",
-        "PRDGS.IS",
-        "PRZMA.IS",
-    ],
-    # Grup 10
-    [
-        "PSDTC.IS",
-        "QNBFL.IS",
-        "REEDR.IS",
-        "RGYAS.IS",
-        "RODRG.IS",
-        "ROWAN.IS",
-        "SANKO.IS",
-        "SARKY.IS",
-        "SAYAS.IS",
-        "SDTTR.IS",
-        "SEGMN.IS",
-        "SEKFK.IS",
-        "SEKUR.IS",
-        "SELGD.IS",
-        "SERNT.IS",
-        "SILVR.IS",
-        "SMART.IS",
-        "SMRTG.IS",
-        "SNICA.IS",
-        "SNPAM.IS",
-        "SODSN.IS",
-        "SOKE.IS",
-        "SURGY.IS",
-        "SUWEN.IS",
-        "TABGD.IS",
-        "TARKN.IS",
-        "TATEN.IS",
-        "TAVHL.IS",
-        "TBORG.IS",
-        "TCELL.IS",
-        "TEZOL.IS",
-        "TGSAS.IS",
-        "THYAO.IS",
-        "TKNSA.IS",
-        "TMPOL.IS",
-        "TMSN.IS",
-        "TOASO.IS",
-        "TRGYO.IS",
-        "TSKB.IS",
-        "TTKOM.IS",
-    ],
+# Ntfy Kanal Ayarı (Orijinal adresin)
+NTFY_URL = "https://ntfy.sh/kaptan_78"
+
+# Tek Merkezi Hafıza Dosyası
+MERKEZI_HAFIZA_DOSYASI = "borsa_hafiza_v2.json"
+
+# BIST Tüm Hisseler
+STOCKS = [
+    "AAVST.IS", "ACSEL.IS", "ADEL.IS", "ADESE.IS", "ADGYO.IS", "AEFES.IS", "AFYON.IS", "AGESA.IS", "AGHOL.IS", "AGROT.IS",
+    "AKBNK.IS", "AKENR.IS", "AKFGY.IS", "AKFYE.IS", "AKGRT.IS", "AKMGY.IS", "AKSA.IS", "AKSEN.IS", "AKSGY.IS", "ALARK.IS",
+    "ALBRK.IS", "ALCAR.IS", "ALCTL.IS", "ALFAS.IS", "ALKA.IS", "ALKIM.IS", "ALKLC.IS", "ALMAT.IS", "ANELE.IS", "ANGEN.IS",
+    "ANHYT.IS", "ANSGR.IS", "ARASE.IS", "ARCLK.IS", "ARDYZ.IS", "ARENA.IS", "ARSAN.IS", "ARTMS.IS", "ARZUM.IS", "ASELS.IS",
+    "ASTOR.IS", "ASUZU.IS", "ATAKP.IS", "ATATP.IS", "ATEKS.IS", "ATLAS.IS", "AVGYO.IS", "AVOD.IS", "AVPGY.IS", "AYCES.IS",
+    "AYDEM.IS", "AYEN.IS", "AYES.IS", "AYGAZ.IS", "AZTEK.IS", "BAGFS.IS", "BAKAB.IS", "BALAT.IS", "BANVT.IS", "BARMA.IS",
+    "BASCM.IS", "BASGZ.IS", "BAYRK.IS", "BEGYO.IS", "BERA.IS", "BEYAZ.IS", "BIENY.IS", "BIGCH.IS", "BIMAS.IS", "BINHO.IS",
+    "BIOEN.IS", "BIZIM.IS", "BJKAS.IS", "BLCYT.IS", "BMSCH.IS", "BMSTL.IS", "BNTAS.IS", "BOBET.IS", "BORLS.IS", "BOSSA.IS",
+    "BRISA.IS", "BRKO.IS", "BRKSN.IS", "BRLSM.IS", "BRMEN.IS", "BRYAT.IS", "BSOKE.IS", "BTCIM.IS", "BUCIM.IS", "BURCE.IS",
+    "BURVA.IS", "BVSAN.IS", "BYDNR.IS", "CANTE.IS", "CASFY.IS", "CCOLA.IS", "CELHA.IS", "CEMAS.IS", "CEMTS.IS", "CEOEM.IS",
+    "CGCAM.IS", "CIMSA.IS", "CLEBI.IS", "CMBTN.IS", "CMENT.IS", "CONSE.IS", "COSMO.IS", "CRDFA.IS", "CRFSA.IS", "CUSAN.IS",
+    "CVKMD.IS", "CWENE.IS", "DAGI.IS", "DAPGM.IS", "DARDL.IS", "DENGE.IS", "DERHL.IS", "DERIM.IS", "DESA.IS", "DESPC.IS",
+    "DEVA.IS", "DIRIT.IS", "DITAS.IS", "DMRGD.IS", "DMSAS.IS", "DNISI.IS", "DOAS.IS", "DOBUR.IS", "DOCO.IS", "DOGUB.IS",
+    "DOHOL.IS", "DSTAN.IS", "DUNYA.IS", "DURDO.IS", "DYOBY.IS", "DZGYO.IS", "EBEBK.IS", "ECILC.IS", "ECZYT.IS", "EDIP.IS",
+    "EGEEN.IS", "EGEPO.IS", "EGGUB.IS", "EGPRO.IS", "EGSER.IS", "EKGYO.IS", "EKOS.IS", "EKSUN.IS", "ELITE.IS", "EMKEL.IS",
+    "ENERY.IS", "ENKAI.IS", "ENJSA.IS", "EPLAS.IS", "ERBOS.IS", "EREGL.IS", "ERSU.IS", "ESCAR.IS", "ESCOM.IS", "ESEN.IS",
+    "ETILR.IS", "EUHOL.IS", "EUKYO.IS", "EUPWR.IS", "EUREN.IS", "EUYO.IS", "EYGYO.IS", "FADE.IS", "FENER.IS", "FLAP.IS",
+    "FMIZP.IS", "FONET.IS", "FORMT.IS", "FRIGO.IS", "FROTO.IS", "GARAN.IS", "GARFA.IS", "GEDIK.IS", "GEDZA.IS", "GENIL.IS",
+    "GENTS.IS", "GEREL.IS", "GESAN.IS", "GLBMD.IS", "GLCVY.IS", "GLRYH.IS", "GLYHO.IS", "GMTAS.IS", "GOKNR.IS", "GOLTS.IS",
+    "GOODY.IS", "GOZDE.IS", "GRNYO.IS", "GRSEL.IS", "GTRGY.IS", "GUBRF.IS", "GWIND.IS", "GZNMI.IS", "HALKB.IS", "HATEK.IS",
+    "HATSN.IS", "HEDEF.IS", "HEKTS.IS", "HKTM.IS", "HLGYO.IS", "HTTBT.IS", "HUBVC.IS", "HURGZ.IS", "ICBCT.IS", "IDEAS.IS",
+    "IDGYO.IS", "IENTS.IS", "IHEVA.IS", "IHGZT.IS", "IHLAS.IS", "IHLGM.IS", "IMASM.IS", "INDES.IS", "INFO.IS", "INGRM.IS",
+    "INTEM.IS", "INVEO.IS", "INVES.IS", "IPEKE.IS", "ISATR.IS", "ISBIR.IS", "ISBTR.IS", "ISCEN.IS", "ISCTR.IS", "ISFIN.IS",
+    "ISGSY.IS", "ISGYO.IS", "ISKPL.IS", "ISKUR.IS", "ISMEN.IS", "ISSEN.IS", "IZENR.IS", "IZFAS.IS", "IZINV.IS", "JANTS.IS",
+    "KAPLM.IS", "KAREL.IS", "KARSN.IS", "KARTN.IS", "KARYE.IS", "KATMR.IS", "KAYSE.IS", "KBORU.IS", "KCAER.IS", "KCHOL.IS",
+    "KENT.IS", "KERVT.IS", "KFEIN.IS", "KGYO.IS", "KIMMR.IS", "KLGYO.IS", "KLKIM.IS", "KLRHO.IS", "KLMSN.IS", "KLSER.IS",
+    "KLSYN.IS", "KMPUR.IS", "KNFRT.IS", "KONTR.IS", "KONYA.IS", "KOPOL.IS", "KORDS.IS", "KOTON.IS", "KOZAA.IS", "KOZAL.IS",
+    "KRDMD.IS", "KRGYO.IS", "KRONT.IS", "KRPLS.IS", "KRSTL.IS", "KRTEK.IS", "KZBGY.IS", "KZYGZ.IS", "LIDER.IS", "LIDFA.IS",
+    "LKMNH.IS", "LMKDC.IS", "LOGO.IS", "LUKSK.IS", "MAALT.IS", "MAKIM.IS", "MAKTK.IS", "MANAS.IS", "MARTI.IS",
+    "MAVI.IS", "MEDTR.IS", "MEGAP.IS", "MEKAG.IS", "MEPET.IS", "MERCN.IS", "MERKO.IS", "METUR.IS", "MGROS.IS", "MIATK.IS",
+    "MMCAS.IS", "MNDRS.IS", "MNDTR.IS", "MOBTL.IS", "MPARK.IS", "MRGYO.IS", "MTRKS.IS", "MTRYO.IS", "MZHLD.IS", "NATEN.IS",
+    "NETAS.IS", "NIBAS.IS", "NTHOL.IS", "NUGYO.IS", "NUHCM.IS", "OBAMS.IS", "OBASE.IS", "ODAS.IS", "OFSYM.IS", "ONCSM.IS",
+    "ORCAY.IS", "OYYAT.IS", "OZAKD.IS", "OZGYO.IS", "OZKGY.IS", "OZLTM.IS", "OZRDN.IS", "PAKRD.IS", "PAMEL.IS", "PAPIL.IS",
+    "PARSN.IS", "PASEU.IS", "PCILT.IS", "PEKGY.IS", "PENGD.IS", "PENTA.IS", "PETKM.IS", "PETUN.IS", "PGSUS.IS", "PINSU.IS",
+    "PKART.IS", "PKENT.IS", "PNSUT.IS", "POLHO.IS", "POLTK.IS", "PRDGS.IS", "PRKME.IS", "PRKAB.IS", "PSGYO.IS", "QNBFB.IS",
+    "QNBFL.IS", "QUAGR.IS", "RALYH.IS", "REEDR.IS", "RNPOL.IS", "RODRG.IS", "ROYAL.IS", "RTALB.IS", "RUBNS.IS", "RYGYO.IS",
+    "RYSAS.IS", "SAFKR.IS", "SAHOL.IS", "SASA.IS", "SAYAS.IS", "SDTTR.IS", "SEGFO.IS", "SEGYO.IS", "SEKFK.IS", "SEKUR.IS",
+    "SELEC.IS", "SELVA.IS", "SEYKM.IS", "SILVR.IS", "SISE.IS", "SKBNK.IS", "SKTAS.IS", "SMART.IS", "SMRTG.IS", "SNGYO.IS",
+    "SNICA.IS", "SNPAM.IS", "SODSN.IS", "SOKM.IS", "SONME.IS", "SRVGY.IS", "SUMAS.IS", "SUNTK.IS", "SUWEN.IS", "TABGD.IS",
+    "TARKM.IS", "TATEN.IS", "TATGD.IS", "TAVHL.IS", "TBORG.IS", "TCELL.IS", "TCKRC.IS", "TDGYO.IS", "TEKTU.IS", "TETMT.IS",
+    "TEZOL.IS", "TGSAS.IS", "THYAO.IS", "TKFEN.IS", "TKNSA.IS", "TMPOL.IS", "TMSN.IS", "TOASO.IS", "TRCAS.IS", "TRGYO.IS",
+    "TRMET.IS", "TSKB.IS", "TSPOR.IS", "TTKOM.IS", "TTRAK.IS", "TUCLK.IS", "TUPRS.IS", "TURSG.IS", "UFUK.IS", "ULAS.IS",
+    "ULUFA.IS", "ULKER.IS", "ULUUN.IS", "VAKBN.IS", "VAKFN.IS", "VAKGY.IS", "VBTYZ.IS", "VERTU.IS", "VERUS.IS", "VESBE.IS",
+    "VESTL.IS", "VKFYO.IS", "VKGYO.IS", "VKING.IS", "YAPRK.IS", "YATAS.IS", "YAYLA.IS", "YBTAS.IS", "YEOTK.IS", "YESIL.IS",
+    "YGGYO.IS", "YIGIT.IS", "YKBNK.IS", "YKSL.IS", "YUNSA.IS", "YYAPI.IS", "ZEDUR.IS", "ZOREN.IS", "ZRGYO.IS",
 ]
 
 
-def bildirim_gonder(mesaj):
+def calculate_hma(series, period=20):
+  half_per = period // 2
+  sqrt_per = int(np.sqrt(period))
+
+  def wma(s, p):
+    weights = np.arange(1, p + 1)
+    return s.rolling(p).apply(
+        lambda x: np.dot(x, weights) / weights.sum(), raw=True
+    )
+
+  wma_half = wma(series, half_per)
+  wma_full = wma(series, period)
+  raw_hma = 2 * wma_half - wma_full
+  hma = wma(raw_hma, sqrt_per)
+  return hma
+
+
+def calculate_mfi(high, low, close, volume, period=14):
   try:
-    requests.post(f"https://ntfy.sh/{NTFY_TOPIC}", data=mesaj.encode("utf-8"))
-  except Exception as e:
-    print(f"Bildirim hatası: {e}")
+    tp = (high + low + close) / 3
+    rmf = tp * volume
+    delta_tp = tp.diff()
+    pos_flow = rmf.where(delta_tp > 0, 0).rolling(period).sum()
+    neg_flow = rmf.where(delta_tp < 0, 0).rolling(period).sum()
+    mfi = 100 - (100 / (1 + pos_flow / (neg_flow + 1e-10)))
+    return mfi
+  except:
+    return pd.Series(50.0, index=close.index)
 
 
-def dalga_ve_verimlilik_hesapla(df):
+def get_wave_position(df):
   try:
-    if df is None or len(df) < 35:
-      return False, 0, 0, 0, 0
+    close = df["Close"].values
+    high = df["High"].values
+    low = df["Low"].values
+    wave_sequence = [4, 8, 5, 8, 9]
+    total_cycle = sum(wave_sequence)
+    if len(high) < total_cycle:
+      total_cycle = len(high)
+    recent_high = np.max(high[-total_cycle:])
+    recent_low = np.min(low[-total_cycle:])
+    margin_range = recent_high - recent_low
+    if margin_range == 0:
+      return 50.0
+    current_close = close[-1]
+    pos = ((current_close - recent_low) / margin_range) * 100
+    return max(0.0, min(100.0, pos))
+  except:
+    return 50.0
 
-    close = df["Close"]
-    volume = df["Volume"]
-    high = df["High"]
-    low = df["Low"]
 
-    ma8 = close.rolling(8).mean()
-    vol_ma20 = volume.rolling(window=20).mean()
-    rvol = volume.iloc[-1] / (vol_ma20.iloc[-1] + 1e-10)
+def check_wave_margins(df, lookback=3, threshold_multiplier=0.80):
+  try:
+    close = df["Close"].values
+    high = df["High"].values
+    low = df["Low"].values
 
-    delta = close.diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-    rs = gain / (loss + 1e-10)
-    rsi = 100 - (100 / (1 + rs))
+    if len(close) < 35 or np.isnan(close[-1]):
+      return False, 50.0
 
-    verimlilik_puani = 0
-    if rvol > 1.5:
-      verimlilik_puani += 15
-    if rsi.iloc[-1] > 50:
-      verimlilik_puani += 10
-    if close.iloc[-1] > ma8.iloc[-1]:
-      verimlilik_puani += 10
+    wave_sequence = [4, 8, 5, 8, 9]
+    total_cycle = sum(wave_sequence)
 
-    fiyat_degisim_kisa = (
-        (close.iloc[-1] - close.iloc[-4]) / close.iloc[-4] * 100
-    )
-    bar_araligi = high.iloc[-1] - low.iloc[-1]
-    toparlanma_orani = (
-        (close.iloc[-1] - low.iloc[-1]) / bar_araligi if bar_araligi > 0 else 0
-    )
+    recent_high = np.max(high[-total_cycle:])
+    recent_low = np.min(low[-total_cycle:])
+    margin_range = recent_high - recent_low
 
-    dip_patlama_sarti = (
-        fiyat_degisim_kisa <= 1.0
-        and rvol >= 2.5
-        and toparlanma_orani >= 0.70
-        and verimlilik_puani >= 35
-    )
+    current_pos = get_wave_position(df)
 
-    return (
-        dip_patlama_sarti,
-        verimlilik_puani,
-        rvol,
-        close.iloc[-1],
-        fiyat_degisim_kisa,
-    )
+    if margin_range == 0:
+      return False, current_pos
+
+    upper_margin_threshold = recent_low + (margin_range * threshold_multiplier)
+    
+    triggered = False
+    for i in range(-lookback, 0):
+      if i - 1 < -len(close):
+        continue
+      prev_p = close[i - 1]
+      curr_p = close[i]
+      if prev_p <= upper_margin_threshold and curr_p > upper_margin_threshold:
+        triggered = True
+        break
+
+    return triggered, current_pos
   except Exception:
-    return False, 0, 0, 0, 0
+    return False, 50.0
 
 
-def ana_tarama_motoru(periyot_adi="15m"):
-  print(f"[{datetime.now()}] {periyot_adi} BIST Toplu İndirme ve Tarama Başladı...")
-  bulunanlar = 0
-
-  for grup_index, grup in enumerate(BIST_GRUPLARI):
-    print(f"-> Grup {grup_index + 1} toplu indiriliyor...")
+# =========================================================================
+# 🦅 KARTAL 15dk MOTORU (1S DMI>25 Zırhı + 15m Dalga Marjı + RVOL >= 0.6 Sentezi)
+# =========================================================================
+def scan_kartal_15dk(df_15m, df_1h):
     try:
-      df_grup = yf.download(
-          grup, period="5d", interval=periyot_adi, progress=False, timeout=30
-      )
+        if df_15m is None or df_1h is None or len(df_15m) < 35 or len(df_1h) < 35:
+            return False
 
-      for hisse in grup:
-        clean_hisse = hisse.strip()
-        try:
-          if isinstance(df_grup.columns, pd.MultiIndex):
-            if clean_hisse in df_grup["Close"].columns:
-              df = pd.DataFrame(
-                  {
-                      "Open": df_grup["Open"][clean_hisse],
-                      "High": df_grup["High"][clean_hisse],
-                      "Low": df_grup["Low"][clean_hisse],
-                      "Close": df_grup["Close"][clean_hisse],
-                      "Volume": df_grup["Volume"][clean_hisse],
-                  }
-              ).dropna()
-            else:
-              continue
+        # 1. MAKRO FİLTRE (1 Saatlik Periyot: Fiyat > HMA20 + +DI > 25 + DMI Üstünlük)
+        close_1h = df_1h['Close']
+        high_1h = df_1h['High']
+        low_1h = df_1h['Low']
+        
+        hma20_1h = calculate_hma(close_1h, 20)
+        if close_1h.iloc[-1] <= hma20_1h.iloc[-1]:
+            return False
+
+        up_move_1h = high_1h.diff()
+        down_move_1h = -low_1h.diff()
+        plus_dm_1h = up_move_1h.where((up_move_1h > down_move_1h) & (up_move_1h > 0), 0)
+        minus_dm_1h = down_move_1h.where((down_move_1h > up_move_1h) & (down_move_1h > 0), 0)
+        tr_1h = pd.concat([high_1h - low_1h, (high_1h - close_1h.shift()).abs(), (low_1h - close_1h.shift()).abs()], axis=1).max(axis=1)
+        
+        plus_di_ser_1h = 100 * (plus_dm_1h.rolling(14).sum() / (tr_1h.rolling(14).sum() + 1e-10))
+        minus_di_ser_1h = 100 * (minus_dm_1h.rolling(14).sum() / (tr_1h.rolling(14).sum() + 1e-10))
+        
+        plus_di_1h = plus_di_ser_1h.iloc[-1]
+        minus_di_1h = minus_di_ser_1h.iloc[-1]
+        
+        di_plus_value_check = plus_di_1h > 25.0
+        di_crossover = (plus_di_ser_1h.iloc[-2] <= minus_di_ser_1h.iloc[-2]) and (plus_di_ser_1h.iloc[-1] > minus_di_ser_1h.iloc[-1])
+        di_above = plus_di_1h > minus_di_1h
+        
+        if not (di_plus_value_check and (di_crossover or di_above)):
+            return False
+
+        # 2. MİKRO OMURGA (15m Periyot: Levent Erol Tam Dalga Marjı Kırılımı + RVOL >= 0.6)
+        wave_triggered, _ = check_wave_margins(df_15m, lookback=3, threshold_multiplier=0.80)
+        if not wave_triggered:
+            return False
+            
+        high_15m = df_15m['High']
+        low_15m = df_15m['Low']
+        close_15m = df_15m['Close']
+        volume_15m = df_15m['Volume']
+        
+        wave_sequence = [4, 8, 5, 8, 9]
+        total_cycle = sum(wave_sequence)
+        if len(close_15m) < total_cycle:
+            return False
+            
+        recent_high = high_15m.iloc[-total_cycle:].max()
+        recent_low = low_15m.iloc[-total_cycle:].min()
+        margin_range = recent_high - recent_low
+        
+        rvol = volume_15m / volume_15m.rolling(window=20).mean()
+        rvol_curr = rvol.iloc[-1] if not pd.isna(rvol.iloc[-1]) and rvol.iloc[-1] > 0 else 1e-5
+        
+        wave_efficiency = margin_range / rvol_curr
+        rvol_check = rvol_curr >= 0.6  # Erken hacim tetiği
+        
+        mfi_ser = calculate_mfi(high_15m, low_15m, close_15m, volume_15m, 14)
+        mfi_check = (mfi_ser.iloc[-12:] > 70).any()
+        
+        return wave_triggered and rvol_check and (wave_efficiency > 0.35) and mfi_check
+    except Exception:
+        return False
+
+
+def scan_kartal_1s(df):
+    try:
+        triggered, _ = check_wave_margins(df, lookback=3, threshold_multiplier=0.80)
+        if not triggered or df.empty or len(df) < 35:
+            return False
+        
+        wave_sequence = [4, 8, 5, 8, 9]
+        total_cycle = sum(wave_sequence)
+        high = df['High'].values
+        low = df['Low'].values
+        volume = df['Volume'].values
+        
+        if len(high) < total_cycle:
+            return False
+            
+        recent_high = np.max(high[-total_cycle:])
+        recent_low = np.min(low[-total_cycle:])
+        margin_range = recent_high - recent_low
+        
+        rvol = volume / pd.Series(volume).rolling(window=20).mean().values
+        rvol_curr = rvol[-1] if not np.isnan(rvol[-1]) and rvol[-1] > 0 else 1e-5
+        
+        wave_efficiency = margin_range / rvol_curr
+        return triggered and (wave_efficiency > 0.35)
+    except Exception:
+        return False
+
+def scan_kartal_ozel(df_15m, df_1s):
+    try:
+        tetik_15m = scan_kartal_15dk(df_15m, df_1s)
+        if not tetik_15m or df_1s.empty or len(df_1s) < 35:
+            return False
+            
+        wave_sequence = [4, 8, 5, 8, 9]
+        total_cycle = sum(wave_sequence)
+        high_1s = df_1s['High'].values
+        low_1s = df_1s['Low'].values
+        volume_1s = df_1s['Volume'].values
+        
+        if len(high_1s) < total_cycle:
+            return False
+            
+        recent_high_1s = np.max(high_1s[-total_cycle:])
+        recent_low_1s = np.min(low_1s[-total_cycle:])
+        margin_range_1s = recent_high_1s - recent_low_1s
+        
+        rvol_1s = volume_1s / pd.Series(volume_1s).rolling(window=20).mean().values
+        rvol_curr_1s = rvol_1s[-1] if not np.isnan(rvol_1s[-1]) and rvol_1s[-1] > 0 else 1e-5
+        
+        efficiency_1s = margin_range_1s / rvol_curr_1s
+        return tetik_15m and (efficiency_1s > 0.35)
+    except Exception:
+        return False
+
+
+def hafiza_yukle():
+  hafiza = {"kayitlar": {}}
+  if os.path.exists(MERKEZI_HAFIZA_DOSYASI):
+    try:
+      with open(MERKEZI_HAFIZA_DOSYASI, "r") as f:
+        data = json.load(f)
+        if isinstance(data, dict):
+          if "kayitlar" in data:
+            hafiza = data
           else:
-            df = df_grup
+            hafiza = {"kayitlar": data}
+    except:
+      hafiza = {"kayitlar": {}}
+  
+  simdi_epoch = time.time()
+  on_gun_sn = 10 * 24 * 3600
+  temiz_kayitlar = {}
+  
+  for kural, hisseler in hafiza.get("kayitlar", {}).items():
+    temiz_kayitlar[kural] = {}
+    if isinstance(hisseler, dict):
+      for hisse, detay in hisseler.items():
+        zaman = detay.get("zaman", 0) if isinstance(detay, dict) else detay
+        if simdi_epoch - zaman <= on_gun_sn:
+          temiz_kayitlar[kural][hisse] = detay if isinstance(detay, dict) else {"zaman": zaman, "ilk_fiyat": 0.0, "tekrar_sayisi": 1}
+          
+  return {"kayitlar": temiz_kayitlar}
 
-          if df is None or len(df) < 35:
-            continue
 
-          sart_saglandi, puan, rvol, fiyat, degisim = (
-              dalga_ve_verimlilik_hesapla(df)
-          )
+def hafiza_kaydet(hafiza):
+  with open(MERKEZI_HAFIZA_DOSYASI, "w") as f:
+    json.dump(hafiza, f, indent=4)
 
-          if sart_saglandi:
-            simdi = time.time()
-            if (
-                clean_hisse not in son_bildirimler
-                or (simdi - son_bildirimler[clean_hisse]) > COOLDOWN_SECONDS
-            ):
-              mesaj = (
-                  f"🎯 [PROFESYONEL HİBRİT - DİP AVCISI]\n"
-                  f"• Hisse: {clean_hisse} ({periyot_adi})\n"
-                  f"• Fiyat: {fiyat:.2f} TL\n"
-                  f"• Verimlilik Puanı: {puan} / 35+\n"
-                  f"• RVOL (Hacim Çarpanı): {rvol:.1f}x\n"
-                  f"• Durum: Eksiden Sert Toparlanma & Patlama!"
-              )
-              bildirim_gonder(mesaj)
-              son_bildirimler[clean_hisse] = simdi
-              bulunanlar += 1
-        except Exception:
-          continue
+
+def piyasa_zaman_kontrolu():
+  if os.environ.get("FORCE_RUN", "false").lower() == "true":
+    return True
+
+  simdi = datetime.now(TZ_TR)
+  if simdi.weekday() >= 5:
+    return False
+
+  baslangic = simdi.replace(hour=9, minute=30, second=0, microsecond=0)
+  bitis = simdi.replace(hour=18, minute=35, second=0, microsecond=0)
+
+  if baslangic <= simdi <= bitis:
+    return True
+  return False
+
+
+def send_ntfy(message, baslik):
+  try:
+    safe_baslik = baslik.encode("ascii", "ignore").decode("ascii")
+    headers = {"Title": safe_baslik, "Priority": "high"}
+    res = requests.post(
+        NTFY_URL, data=message.encode("utf-8"), headers=headers, timeout=10
+    )
+    print(f"Ntfy Yanıtı ({safe_baslik}): {res.status_code}")
+  except Exception as e:
+    print(f"Ntfy Mesaj Hatası: {e}")
+
+
+def download_with_retry(chunk, interval, period, max_retries=4):
+  for attempt in range(1, max_retries + 1):
+    try:
+      df_all = yf.download(chunk, period=period, interval=interval, group_by='ticker', progress=False, threads=False)
+      if df_all is not None and not df_all.empty:
+        return df_all
     except Exception as e:
-      print(f"Grup indirme hatası: {e}")
+      print(f"  [Uyarı] İndirme hatası ({interval}, Deneme {attempt}/{max_retries}): {e}")
+      time.sleep(2 * attempt)
+  return pd.DataFrame()
 
-  print(f"[{datetime.now()}] {periyot_adi} Tarama Tamamlandı. Bulunan: {bulunanlar}")
+
+def extract_ticker_df(df_all, clean_ticker, chunk):
+  try:
+    if df_all is None or df_all.empty:
+      return pd.DataFrame()
+
+    if isinstance(df_all.columns, pd.MultiIndex):
+      if clean_ticker in df_all.columns.levels[0]:
+        sub_df = df_all[clean_ticker].dropna(how="all")
+        if not sub_df.empty:
+          return sub_df
+
+    if len(chunk) == 1:
+      return df_all.copy()
+
+    cols = [col for col in df_all.columns if isinstance(col, tuple) and clean_ticker in col]
+    if cols:
+      sub_df = df_all.xs(clean_ticker, level=0, axis=1).dropna(how="all")
+      if not sub_df.empty:
+        return sub_df
+
+  except Exception:
+    pass
+  return pd.DataFrame()
+
+
+def run_scanner():
+  if not piyasa_zaman_kontrolu():
+    print("Borsa seans saatleri dışındayız veya hafta sonu. Tarama atlanıyor.")
+    return
+
+  simdi_epoch = time.time()
+  is_manual_run = os.environ.get("FORCE_RUN", "false").lower() == "true"
+  
+  print(
+      f"[{datetime.now(TZ_TR).strftime('%Y-%m-%d %H:%M:%S')}] Erken Avcı Sistemi Başlatıldı... (Manuel Mod: {is_manual_run})"
+  )
+
+  tum_hafiza = hafiza_yukle()
+  toplanan_sinyaller = []
+
+  chunk_size = 40
+  stock_chunks = [STOCKS[i:i + chunk_size] for i in range(0, len(STOCKS), chunk_size)]
+
+  def fetch_chunk_data(chunk_idx, chunk):
+    print(f"Grup {chunk_idx}/{len(stock_chunks)} verileri indiriliyor ({len(chunk)} hisse)...")
+    df_1h_all = download_with_retry(chunk, "1h", "2mo")
+    df_15m_all = download_with_retry(chunk, "15m", "10d")
+    return chunk_idx, chunk, df_1h_all, df_15m_all
+
+  chunk_results = []
+  with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+    futures = [executor.submit(fetch_chunk_data, idx, ch) for idx, ch in enumerate(stock_chunks, 1)]
+    for future in concurrent.futures.as_completed(futures):
+      try:
+        chunk_results.append(future.result())
+      except Exception as exc:
+        print(f"Grup indirme sırasında hata: {exc}")
+
+  chunk_results.sort(key=lambda x: x[0])
+
+  for chunk_idx, chunk, df_1h_all, df_15m_all in chunk_results:
+    for clean_ticker in chunk:
+      temiz_isim = clean_ticker.replace(".IS", "")
+      tetiklenen_str = []
+      guncel_fiyat = 0.0
+      toplam_puan = 0.0
+
+      rsi_1h = 0.0
+      mfi_1h = 50.0
+      plus_di_1h = 0.0
+      konum_1h = 50.0
+      rvol_1h = 0.0
+      wave_breakout_1h = False
+      hma20_1h_curr = 0.0
+
+      mfi_15m = 50.0
+      plus_di_15m = 0.0
+      dalga_verimlilik_skoru_15m = 0.0
+
+      try:
+        def kayit_guncelle(kural_adi):
+            if kural_adi not in tum_hafiza["kayitlar"]:
+                tum_hafiza["kayitlar"][kural_adi] = {}
+            
+            mevcut_kayit = tum_hafiza["kayitlar"][kural_adi].get(clean_ticker)
+            if mevcut_kayit:
+                mevcut_kayit["son_fiyat"] = guncel_fiyat
+                mevcut_kayit["tekrar_sayisi"] = mevcut_kayit.get("tekrar_sayisi", 1) + 1
+                son_zaman = mevcut_kayit.get("zaman", simdi_epoch)
+            else:
+                tum_hafiza["kayitlar"][kural_adi][clean_ticker] = {
+                    "zaman": simdi_epoch,
+                    "ilk_fiyat": guncel_fiyat,
+                    "son_fiyat": guncel_fiyat,
+                    "tekrar_sayisi": 1
+                }
+                son_zaman = simdi_epoch
+            
+            if is_manual_run:
+                return True
+            return simdi_epoch - son_zaman > COOLDOWN_SECONDS
+
+        df_1h = extract_ticker_df(df_1h_all, clean_ticker, chunk)
+        if not df_1h.empty and len(df_1h) >= 40:
+          if isinstance(df_1h.columns, pd.MultiIndex):
+            df_1h.columns = df_1h.columns.get_level_values(0)
+
+          close_1h = df_1h["Close"]
+          high_1h = df_1h["High"]
+          low_1h = df_1h["Low"]
+          volume_1h = df_1h["Volume"]
+          
+          if not close_1h.isna().iloc[-1] and not volume_1h.isna().iloc[-1]:
+            close_curr_1h = close_1h.iloc[-1]
+            guncel_fiyat = close_curr_1h
+
+            delta_1h = close_1h.diff()
+            gain_1h = (delta_1h.where(delta_1h > 0, 0)).rolling(14).mean()
+            loss_1h = (-delta_1h.where(delta_1h < 0, 0)).rolling(14).mean()
+            rs_1h = gain_1h / (loss_1h + 1e-10)
+            rsi_1h = (100 - (100 / (1 + rs_1h))).iloc[-1]
+
+            mfi_ser_1h = calculate_mfi(high_1h, low_1h, close_1h, volume_1h, 14)
+            mfi_1h = mfi_ser_1h.iloc[-1]
+
+            up_move_1h = high_1h.diff()
+            down_move_1h = -low_1h.diff()
+            plus_dm_1h = up_move_1h.where((up_move_1h > down_move_1h) & (up_move_1h > 0), 0)
+            minus_dm_1h = down_move_1h.where((down_move_1h > up_move_1h) & (down_move_1h > 0), 0)
+            tr_1h = pd.concat([high_1h - low_1h, (high_1h - close_1h.shift()).abs(), (low_1h - close_1h.shift()).abs()], axis=1).max(axis=1)
+            
+            plus_di_ser_1h = 100 * (plus_dm_1h.rolling(14).sum() / (tr_1h.rolling(14).sum() + 1e-10))
+            minus_di_ser_1h = 100 * (minus_dm_1h.rolling(14).sum() / (tr_1h.rolling(14).sum() + 1e-10))
+            
+            plus_di_1h = plus_di_ser_1h.iloc[-1]
+            minus_di_1h = minus_di_ser_1h.iloc[-1]
+
+            rvol_1h = (volume_1h / volume_1h.rolling(20).mean()).iloc[-1]
+
+            wave_res_1h = check_wave_margins(df_1h, lookback=3, threshold_multiplier=0.80)
+            wave_breakout_1h = wave_res_1h[0]
+            konum_1h = wave_res_1h[1]
+
+            hma20_1h = calculate_hma(close_1h, 20)
+            hma20_1h_curr = hma20_1h.iloc[-1]
+
+            if (close_curr_1h > hma20_1h_curr) and (rsi_1h > 50) and (plus_di_1h > 25) and wave_breakout_1h:
+              if kayit_guncelle("1h_dalga_gorsel"):
+                tetiklenen_str.append("1 Saat Yakala")
+                toplam_puan += 25.0
+
+            if (close_curr_1h > hma20_1h_curr) and (rvol_1h >= 2.0) and wave_breakout_1h:
+              if kayit_guncelle("deli_gitan_1h"):
+                tetiklenen_str.append("DELİRDİ 1 Saat")
+                toplam_puan += 35.0
+
+        df_15m = extract_ticker_df(df_15m_all, clean_ticker, chunk)
+        if not df_15m.empty and len(df_15m) >= 40:
+          if isinstance(df_15m.columns, pd.MultiIndex):
+            df_15m.columns = df_15m.columns.get_level_values(0)
+
+          close_15m = df_15m["Close"]
+          high_15m = df_15m["High"]
+          low_15m = df_15m["Low"]
+          volume_15m = df_15m["Volume"]
+
+          if not close_15m.isna().iloc[-1] and not volume_15m.isna().iloc[-1]:
+            if guncel_fiyat == 0.0:
+              guncel_fiyat = close_15m.iloc[-1]
+
+            mfi_ser_15m = calculate_mfi(high_15m, low_15m, close_15m, volume_15m, 14)
+            mfi_15m = mfi_ser_15m.iloc[-1]
+
+            up_move_15m = high_15m.diff()
+            down_move_15m = -low_15m.diff()
+            plus_dm_15m = up_move_15m.where((up_move_15m > down_move_15m) & (up_move_15m > 0), 0)
+            minus_dm_15m = down_move_15m.where((down_move_15m > up_move_15m) & (down_move_15m > 0), 0)
+            tr_15m = pd.concat([high_15m - low_15m, (high_15m - close_15m.shift()).abs(), (low_15m - close_15m.shift()).abs()], axis=1).max(axis=1)
+            
+            plus_di_ser_15m = 100 * (plus_dm_15m.rolling(14).sum() / (tr_15m.rolling(14).sum() + 1e-10))
+            minus_di_ser_15m = 100 * (minus_dm_15m.rolling(14).sum() / (tr_15m.rolling(14).sum() + 1e-10))
+            plus_di_15m = plus_di_ser_15m.iloc[-1]
+
+            tenkan_9 = (high_15m.rolling(9).max() + low_15m.rolling(9).min()) / 2
+            kijun_26 = (high_15m.rolling(26).max() + low_15m.rolling(26).min()) / 2
+            senkou_span_a = (tenkan_9 + kijun_26) / 2
+
+            hma9_15m = calculate_hma(close_15m, 9)
+            hma9_kesisir_span_a_15m = (hma9_15m.iloc[-2] <= senkou_span_a.iloc[-2]) and (hma9_15m.iloc[-1] > senkou_span_a.iloc[-1])
+            hma9_ustunde_span_a_15m = hma9_15m.iloc[-1] > senkou_span_a.iloc[-1]
+            hma9_esnek_sarti = hma9_kesisir_span_a_15m or hma9_ustunde_span_a_15m
+
+            di_kesisim_15m = (plus_di_ser_15m.iloc[-2] <= minus_di_ser_15m.iloc[-2]) and (plus_di_ser_15m.iloc[-1] > minus_di_ser_15m.iloc[-1])
+            di_15m_kosul = (plus_di_15m > 20.0) or di_kesisim_15m
+
+            hibrit_mfi_onay = (mfi_ser_15m.iloc[-12:] > 70).any() and (mfi_ser_15m.iloc[-4:] > 50).all() and (mfi_ser_15m.iloc[-1] > 50)
+
+            rvol_15m_dip = (volume_15m / volume_15m.rolling(20).mean()).iloc[-1]
+            hacim_erken_dip_06 = (rvol_15m_dip >= 0.6)
+
+            # =========================================================================
+            # 🌿 ÇEKİRGE STRATEJİSİ (Orijinal Saf Sıkışma)
+            # =========================================================================
+            makro_cekirge_onay = False
+            if not df_1h.empty and len(df_1h) >= 35:
+                high_np_1h = df_1h['High'].values
+                low_np_1h = df_1h['Low'].values
+                vol_np_1h = df_1h['Volume'].values
+                
+                wave_sequence = [4, 8, 5, 8, 9]
+                total_cycle_1h = sum(wave_sequence)
+                
+                if len(high_np_1h) >= total_cycle_1h:
+                    recent_high_1h = np.max(high_np_1h[-total_cycle_1h:])
+                    recent_low_1h = np.min(low_np_1h[-total_cycle_1h:])
+                    margin_range_1h = recent_high_1h - recent_low_1h
+                    
+                    rvol_series_1h = vol_np_1h / pd.Series(vol_np_1h).rolling(window=20).mean().values
+                    rvol_curr_1h = rvol_series_1h[-1] if not np.isnan(rvol_series_1h[-1]) and rvol_series_1h[-1] > 0 else 1e-5
+                    
+                    efficiency_1h = margin_range_1h / rvol_curr_1h
+                    
+                    makro_verimlilik_1h = efficiency_1h > 0.35
+                    makro_di_1h = plus_di_1h > 25.0
+                    makro_hma20_1h = guncel_fiyat > hma20_1h_curr
+                    
+                    makro_cekirge_onay = makro_verimlilik_1h and makro_di_1h and makro_hma20_1h
+
+            mfi_60_sarti_15m = (mfi_ser_15m.iloc[-12:] > 60.0).any()
+
+            lowest_k_15m = low_15m.rolling(14).min()
+            highest_k_15m = high_15m.rolling(14).max()
+            stoch_k_15m = 100 * (close_15m - lowest_k_15m) / (highest_k_15m - lowest_k_15m + 1e-10)
+            stoch_esnek_dip = (stoch_k_15m.iloc[-1] <= 25.0) or (stoch_k_15m.iloc[-1] > stoch_k_15m.iloc[-2])
+
+            span_b_15m = (high_15m.rolling(52).max() + low_15m.rolling(52).min()) / 2
+            bulut_kalinligi_15m = (senkou_span_a - span_b_15m).abs()
+            daralan_bulut_15m = bulut_kalinligi_15m.iloc[-1] < bulut_kalinligi_15m.rolling(20).mean().iloc[-1]
+
+            sma20_15m = close_15m.rolling(20).mean()
+            std20_15m = close_15m.rolling(20).std()
+            upper_bb_15m = sma20_15m + (std20_15m * 2)
+            lower_bb_15m = sma20_15m - (std20_15m * 2)
+            band_width_15m = (upper_bb_15m - lower_bb_15m) / (sma20_15m + 1e-10)
+            bb_squeeze_15m = band_width_15m.iloc[-1] < band_width_15m.rolling(20).mean().iloc[-1]
+            bb_orta_ustu_15m = close_15m.iloc[-1] >= sma20_15m.iloc[-1]
+
+            mikro_cekirge_tetik = (bb_squeeze_15m or bb_orta_ustu_15m or daralan_bulut_15m) and hma9_esnek_sarti and mfi_60_sarti_15m and stoch_esnek_dip
+
+            if makro_cekirge_onay and mikro_cekirge_tetik:
+              if kayit_guncelle("cekirge_15m"):
+                tetiklenen_str.append("ÇEKİRGE")
+                toplam_puan += 45.0
+            # =========================================================================
+
+            # =========================================================================
+            # 🦅 KARTAL 15DK KONTROLÜ (Güncel Sentez Motoru)
+            # =========================================================================
+            if not df_1h.empty:
+                if scan_kartal_15dk(df_15m, df_1h):
+                    if kayit_guncelle("kartal_15dk"):
+                        tetiklenen_str.append("KARTAL 15dk")
+                        toplam_puan += 45.0
+            # =========================================================================
+
+            if (
+                (plus_di_1h > 25.0)
+                and hma9_esnek_sarti
+                and di_15m_kosul
+                and hibrit_mfi_onay
+                and hacim_erken_dip_06
+            ):
+              if kayit_guncelle("dip_hibrit"):
+                tetiklenen_str.append("TEHLİKELİ HİBRİT")
+                toplam_puan += 30.0
+
+            if not df_1h.empty and scan_kartal_1s(df_1h):
+              if kayit_guncelle("kartal_1s"):
+                tetiklenen_str.append("KARTAL 1 S")
+                toplam_puan += 35.0
+
+            if not df_1h.empty and scan_kartal_ozel(df_15m, df_1h):
+              if kayit_guncelle("kartal_ozel"):
+                tetiklenen_str.append("KARTAL ÖZEL")
+                toplam_puan += 45.0
+
+        if tetiklenen_str:
+          if not tetiklenen_str:
+              continue
+
+          if toplam_puan == 0:
+            toplam_puan = 25.0
+
+          try:
+              live_tk = yf.Ticker(clean_ticker)
+              live_price = live_tk.fast_info['lastPrice']
+              if live_price is not None and not math.isnan(float(live_price)) and float(live_price) > 0:
+                  guncel_fiyat = float(live_price)
+          except Exception:
+              pass
+
+          strats_upper_chk = [s.upper() for s in tetiklenen_str]
+          has_both_1h_chk = ("1 SAAT YAKALA" in strats_upper_chk) and ("DELİRDİ 1 SAAT" in strats_upper_chk)
+          has_cekirge_hibrit_chk = ("ÇEKİRGE" in strats_upper_chk) and ("TEHLİKELİ HİBRİT" in strats_upper_chk)
+          has_kartal15_chk = "KARTAL 15DK" in strats_upper_chk
+          strat_count_chk = len(tetiklenen_str)
+
+          # Öncelik Sıralaması: 1. Çifte Alarm, 2. Altın Kesişim, 3. Kartal 15dk, vb.
+          if has_both_1h_chk:
+              ozel_oncelik = 4
+          elif has_cekirge_hibrit_chk:
+              ozel_oncelik = 3
+          elif has_kartal15_chk:
+              ozel_oncelik = 2
+          elif strat_count_chk >= 2:
+              ozel_oncelik = 2
+          else:
+              ozel_oncelik = 1
+
+          toplanan_sinyaller.append({
+              "temiz_isim": temiz_isim,
+              "fiyat": guncel_fiyat,
+              "puan": toplam_puan,
+              "ozel_oncelik": ozel_oncelik,
+              "stratejiler": tetiklenen_str,
+              "rsi_1h": rsi_1h,
+              "rvol_1h": rvol_1h,
+              "konum_1h": konum_1h,
+              "mfi_15m": mfi_15m,
+              "plus_di_15m": plus_di_15m
+          })
+          hafiza_kaydet(tum_hafiza)
+          print(f"  > {clean_ticker} inceleniyor... 🎯 Sinyal Yakalandı! (Fiyat: ₺{guncel_fiyat:.2f})")
+        else:
+          print(f"  > {clean_ticker} inceleniyor... [Temiz]")
+
+      except Exception as e:
+        print(f"  > Hata oluştu ({clean_ticker}): {e}")
+        continue
+
+  if toplanan_sinyaller:
+    # Sıralamayı tersine çevirerek istendiği gibi akışı ters akışa uyarlıyoruz (reverse=False -> reverse=True ile tam tersi)
+    toplanan_sinyaller.sort(key=lambda x: (x['ozel_oncelik'], len(x['stratejiler']), x['puan']), reverse=False)
+
+    grup_boyutu = 3
+    for i in range(0, len(toplanan_sinyaller), grup_boyutu):
+      alt_grup = toplanan_sinyaller[i:i + grup_boyutu]
+      mesaj_satirlari = ["----------------------------------------"]
+
+      for item in alt_grup:
+        strats_upper = [s.upper() for s in item['stratejiler']]
+        has_both_1h = ("1 SAAT YAKALA" in strats_upper) and ("DELİRDİ 1 SAAT" in strats_upper)
+        has_cekirge_hibrit = ("ÇEKİRGE" in strats_upper) and ("TEHLİKELİ HİBRİT" in strats_upper)
+        strat_count = len(item['stratejiler'])
+
+        if has_both_1h:
+          prefix = "👑🚨 DİKKAT: 1S ÇİFTE ALARM 👑🚨"
+        elif has_cekirge_hibrit:
+          prefix = "💎🔥 ALTIN KESİŞİM: ÇEKİRGE + HİBRİT 🔥💎"
+        elif strat_count >= 3:
+          prefix = "🚀🚀🚀 Hisse:"
+        elif strat_count == 2:
+          prefix = "🚀🚀 Hisse:"
+        else:
+          prefix = "📌 Hisse:"
+        
+        mesaj_satirlari.append(f"{prefix} 🟦 {item['temiz_isim']} 🟦 | Fiyat: ₺{item['fiyat']:.2f}")
+        
+        for strat in item['stratejiler']:
+          strat_upper = strat.upper()
+          if "KARTAL 15DK" in strat_upper:
+            mesaj_satirlari.append(f"• 🦅⚡ {strat} (MFI:{item['mfi_15m']:.1f} | +DI:{item['plus_di_15m']:.1f})")
+          elif "KARTAL ÖZEL" in strat_upper:
+            mesaj_satirlari.append(f"• 🦅🎯 {strat} (MFI:{item['mfi_15m']:.1f} | +DI:{item['plus_di_15m']:.1f})")
+          elif "KARTAL 1 S" in strat_upper:
+            mesaj_satirlari.append(f"• 🦅📊 {strat} (MFI:{item['mfi_15m']:.1f} | +DI:{item['plus_di_15m']:.1f})")
+          elif "ÇEKİRGE" in strat_upper:
+            mesaj_satirlari.append(f"• 🌿🚀🐕 {strat} (MFI:{item['mfi_15m']:.1f} | +DI:{item['plus_di_15m']:.1f})")
+          elif "TEHLİKELİ HİBRİT" in strat_upper:
+            mesaj_satirlari.append(f"• 🟢🟢🟢 {strat} (15m MFI:{item['mfi_15m']:.1f} | 15m +DI:{item['plus_di_15m']:.1f})")
+          elif "DELİRDİ" in strat_upper and "1 SAAT" in strat_upper:
+            mesaj_satirlari.append(f"• 💥💥💥 {strat} (1s RVOL:{item['rvol_1h']:.2f} | 1s RSI:{item['rsi_1h']:.1f} | 1s Konum:%{item['konum_1h']:.1f})")
+          elif "1 SAAT YAKALA" in strat_upper:
+            mesaj_satirlari.append(f"• ⚫⚫⚫ {strat} (1s RSI:{item['rsi_1h']:.1f} | 1s Konum:%{item['konum_1h']:.1f})")
+          else:
+            mesaj_satirlari.append(f"• 🟣 {strat}")
+            
+        mesaj_satirlari.append("----------------------------------------")
+
+      final_mesaj = "\n".join(mesaj_satirlari)
+      send_ntfy(final_mesaj, "BIST Sinyal Raporu")
+      time.sleep(0.4)
+
+  print("\nTüm Hisseler tarandı ve süreç tamamlandı.")
 
 
 if __name__ == "__main__":
-  ana_tarama_motoru("15m")
-  ana_tarama_motoru("1h")
+  print("Tarama Sistemi başlatıldı...")
+  run_scanner()
