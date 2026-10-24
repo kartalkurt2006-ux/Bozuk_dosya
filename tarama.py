@@ -435,7 +435,7 @@ def run_scanner():
 
       mfi_15m = 50.0
       plus_di_15m = 0.0
-      dalga_verimlilik_skoru_15m = 0.0
+      son_roc = 0.0
 
       try:
         def kayit_guncelle(kural_adi):
@@ -623,6 +623,31 @@ def run_scanner():
                         toplam_puan += 45.0
             # =========================================================================
 
+            # =========================================================================
+            # 🎯 SÜPER 15 CROSS MODÜLÜ (ROC Erken İvme Entegrasyonu)
+            # =========================================================================
+            bb_middle_s15 = close_15m.rolling(22).mean()
+            bb_std_s15 = close_15m.rolling(22).std()
+            bb_upper_s15 = bb_middle_s15 + (2 * bb_std_s15)
+            bb_lower_s15 = bb_middle_s15 - (2 * bb_std_s15)
+
+            bb_width_s15 = bb_upper_s15 - bb_lower_s15
+            is_squeezed_s15 = bb_width_s15.iloc[-2] <= bb_width_s15.rolling(22).min().iloc[-2] * 1.15
+
+            roc_s15 = close_15m.pct_change(periods=2) * 100
+            roc_curr_s15 = roc_s15.iloc[-1] if not np.isnan(roc_s15.iloc[-1]) else 0.0
+            son_roc = roc_curr_s15
+            is_sudden_burst = roc_curr_s15 >= 1.5
+
+            is_bb_breakout = close_15m.iloc[-1] >= bb_upper_s15.iloc[-1]
+            mfi_curr_s15 = mfi_15m.iloc[-1]
+
+            if is_squeezed_s15 and is_bb_breakout and is_sudden_burst and (mfi_curr_s15 > 50.0):
+              if kayit_guncelle("super_15_bb_cross"):
+                tetiklenen_str.append("SÜPER 15 CROSS (ROC)")
+                toplam_puan += 40.0
+            # =========================================================================
+
             if (
                 (plus_di_1h > 25.0)
                 and hma9_esnek_sarti
@@ -687,7 +712,8 @@ def run_scanner():
               "rvol_1h": rvol_1h,
               "konum_1h": konum_1h,
               "mfi_15m": mfi_15m,
-              "plus_di_15m": plus_di_15m
+              "plus_di_15m": plus_di_15m,
+              "roc": son_roc
           })
           hafiza_kaydet(tum_hafiza)
           print(f"  > {clean_ticker} inceleniyor... 🎯 Sinyal Yakalandı! (Fiyat: ₺{guncel_fiyat:.2f})")
@@ -699,7 +725,7 @@ def run_scanner():
         continue
 
   if toplanan_sinyaller:
-    # Sıralamayı tersine çevirerek istendiği gibi akışı ters akışa uyarlıyoruz (reverse=False -> reverse=True ile tam tersi)
+    # Sıralamayı tersine çevirerek istendiği gibi akışı ters akışa uyarlıyoruz
     toplanan_sinyaller.sort(key=lambda x: (x['ozel_oncelik'], len(x['stratejiler']), x['puan']), reverse=False)
 
     grup_boyutu = 3
@@ -728,7 +754,9 @@ def run_scanner():
         
         for strat in item['stratejiler']:
           strat_upper = strat.upper()
-          if "KARTAL 15DK" in strat_upper:
+          if "SÜPER 15 CROSS" in strat_upper:
+            mesaj_satirlari.append(f"• 🎯🎯 {strat} (ROC:%{item['roc']:.1f} | MFI:{item['mfi_15m']:.1f})")
+          elif "KARTAL 15DK" in strat_upper:
             mesaj_satirlari.append(f"• 🦅⚡ {strat} (MFI:{item['mfi_15m']:.1f} | +DI:{item['plus_di_15m']:.1f})")
           elif "KARTAL ÖZEL" in strat_upper:
             mesaj_satirlari.append(f"• 🦅🎯 {strat} (MFI:{item['mfi_15m']:.1f} | +DI:{item['plus_di_15m']:.1f})")
