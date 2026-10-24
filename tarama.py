@@ -401,7 +401,6 @@ BIST_GRUPLARI = [
     # Grup 10
     [
         "PSDTC.IS",
-        "脉脉.IS",
         "QNBFL.IS",
         "REEDR.IS",
         "RGYAS.IS",
@@ -416,30 +415,31 @@ BIST_GRUPLARI = [
         "SEKUR.IS",
         "SELGD.IS",
         "SERNT.IS",
-        "	SILVR.IS",
-        "		SIPUR.IS",
+        "SILVR.IS",
         "SMART.IS",
         "SMRTG.IS",
-        "	SNICA.IS",
-        "	SNPAM.IS",
-        "	SODSN.IS",
-        "	SOKE.IS",
-        "		SURGY.IS",
-        "	SUWEN.IS",
-        "		TABGD.IS",
-        "	TARKN.IS",
-        "	TATEN.IS",
-        "	TAVHL.IS",
-        "	TBORG.IS",
-        "	TCELL.IS",
-        "	TEZOL.IS",
-        "	TGSAS.IS",
-        "		THYAO.IS",
-        "	TKNSA.IS",
-        "	TMPOL.IS",
-        "	TMSN.IS",
-        "		TOASO.IS",
-        "	TRGYO.IS",
+        "SNICA.IS",
+        "SNPAM.IS",
+        "SODSN.IS",
+        "SOKE.IS",
+        "SURGY.IS",
+        "SUWEN.IS",
+        "TABGD.IS",
+        "TARKN.IS",
+        "TATEN.IS",
+        "TAVHL.IS",
+        "TBORG.IS",
+        "TCELL.IS",
+        "TEZOL.IS",
+        "TGSAS.IS",
+        "THYAO.IS",
+        "TKNSA.IS",
+        "TMPOL.IS",
+        "TMSN.IS",
+        "TOASO.IS",
+        "TRGYO.IS",
+        "TSKB.IS",
+        "TTKOM.IS",
     ],
 ]
 
@@ -449,19 +449,6 @@ def bildirim_gonder(mesaj):
     requests.post(f"https://ntfy.sh/{NTFY_TOPIC}", data=mesaj.encode("utf-8"))
   except Exception as e:
     print(f"Bildirim hatası: {e}")
-
-
-def veri_cek(hisse, period="5d", interval="15m"):
-  try:
-    df = yf.download(
-        hisse.strip(), period=period, interval=interval, progress=False, timeout=10
-    )
-    if isinstance(df.columns, pd.MultiIndex):
-      df.columns = df.columns.get_level_values(0)
-    time.sleep(0.3)
-    return df
-  except Exception:
-    return None
 
 
 def dalga_ve_verimlilik_hesapla(df):
@@ -519,37 +506,63 @@ def dalga_ve_verimlilik_hesapla(df):
 
 
 def ana_tarama_motoru(periyot_adi="15m"):
-  print(f"[{datetime.now()}] {periyot_adi} BIST Tüm Hisseler Taranıyor...")
+  print(f"[{datetime.now()}] {periyot_adi} BIST Toplu İndirme ve Tarama Başladı...")
   bulunanlar = 0
 
   for grup_index, grup in enumerate(BIST_GRUPLARI):
-    print(f"-> Grup {grup_index + 1} taranıyor...")
-    for hisse in grup:
-      clean_hisse = hisse.strip()
-      df = veri_cek(clean_hisse, period="5d", interval=periyot_adi)
-      if df is None or len(df) < 35:
-        continue
+    print(f"-> Grup {grup_index + 1} toplu indiriliyor...")
+    try:
+      df_grup = yf.download(
+          grup, period="5d", interval=periyot_adi, progress=False, timeout=30
+      )
 
-      sart_saglandi, puan, rvol, fiyat, degisim = dalga_ve_verimlilik_hesapla(df)
+      for hisse in grup:
+        clean_hisse = hisse.strip()
+        try:
+          if isinstance(df_grup.columns, pd.MultiIndex):
+            if clean_hisse in df_grup["Close"].columns:
+              df = pd.DataFrame(
+                  {
+                      "Open": df_grup["Open"][clean_hisse],
+                      "High": df_grup["High"][clean_hisse],
+                      "Low": df_grup["Low"][clean_hisse],
+                      "Close": df_grup["Close"][clean_hisse],
+                      "Volume": df_grup["Volume"][clean_hisse],
+                  }
+              ).dropna()
+            else:
+              continue
+          else:
+            df = df_grup
 
-      if sart_saglandi:
-        simdi = time.time()
-        if (
-            clean_hisse not in son_bildirimler
-            or (simdi - son_bildirimler[clean_hisse]) > COOLDOWN_SECONDS
-        ):
-          mesaj = (
-              f"🎯 [PROFESYONEL HİBRİT - DİP AVCISI]\n"
-              f"• Hisse: {clean_hisse} ({periyot_adi})\n"
-              f"• Fiyat: {fiyat:.2f} TL\n"
-              f"• Verimlilik Puanı: {puan} / 35+\n"
-              f"• RVOL (Hacim Çarpanı): {rvol:.1f}x\n"
-              f"• Durum: Eksiden Sert Toparlanma & Patlama!"
+          if df is None or len(df) < 35:
+            continue
+
+          sart_saglandi, puan, rvol, fiyat, degisim = (
+              dalga_ve_verimlilik_hesapla(df)
           )
-          bildirim_gonder(mesaj)
-          son_bildirimler[clean_hisse] = simdi
-          bulunanlar += 1
-    time.sleep(1)
+
+          if sart_saglandi:
+            simdi = time.time()
+            if (
+                clean_hisse not in son_bildirimler
+                or (simdi - son_bildirimler[clean_hisse]) > COOLDOWN_SECONDS
+            ):
+              mesaj = (
+                  f"🎯 [PROFESYONEL HİBRİT - DİP AVCISI]\n"
+                  f"• Hisse: {clean_hisse} ({periyot_adi})\n"
+                  f"• Fiyat: {fiyat:.2f} TL\n"
+                  f"• Verimlilik Puanı: {puan} / 35+\n"
+                  f"• RVOL (Hacim Çarpanı): {rvol:.1f}x\n"
+                  f"• Durum: Eksiden Sert Toparlanma & Patlama!"
+              )
+              bildirim_gonder(mesaj)
+              son_bildirimler[clean_hisse] = simdi
+              bulunanlar += 1
+        except Exception:
+          continue
+    except Exception as e:
+      print(f"Grup indirme hatası: {e}")
 
   print(f"[{datetime.now()}] {periyot_adi} Tarama Tamamlandı. Bulunan: {bulunanlar}")
 
