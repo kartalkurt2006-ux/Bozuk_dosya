@@ -318,6 +318,7 @@ def hafiza_kaydet(hafiza):
 
 
 def piyasa_zaman_kontrolu():
+  # Sadece GitHub Actions üzerinde el ile manuel tetiklendiğinde (FORCE_RUN=true) çalışır.
   if os.environ.get("FORCE_RUN", "false").lower() == "true":
     return True
 
@@ -384,7 +385,7 @@ def extract_ticker_df(df_all, clean_ticker, chunk):
 
 def run_scanner():
   if not piyasa_zaman_kontrolu():
-    print("Borsa seans saatleri dışındayız veya hafta sonu. Tarama atlanıyor.")
+    print("Manuel tetikleme algılanmadı veya seans dışı (FORCE_RUN aktif değil). Tarama atlanıyor.")
     return
 
   simdi_epoch = time.time()
