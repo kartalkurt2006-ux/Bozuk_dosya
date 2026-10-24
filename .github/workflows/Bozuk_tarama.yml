@@ -2,7 +2,8 @@ name: BIST Avci Otomatik Tarama
 
 on:
   schedule:
-    - cron: '*/15 6-15 * * 1-5'
+    # TSİ ile Hafta içi 06:00 - 21:00 arası her 15 dakikada bir (UTC 03:00 - 18:00)
+    - cron: '*/15 3-18 * * 1-5'
   workflow_dispatch:
 
 permissions:
@@ -39,8 +40,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          touch borsa_hafiza_v2.json
-          git add borsa_hafiza_v2.json
+          git add borsa_hafiza_v2.json || true
           git commit -m "Otomatik hafıza güncellemesi" || echo "Değişiklik yok"
           git pull origin main --rebase || true
           git push origin main || echo "Push atlanıyor"
