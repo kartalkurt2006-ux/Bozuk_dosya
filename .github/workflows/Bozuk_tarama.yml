@@ -2,8 +2,8 @@ name: BIST Avci Otomatik Tarama
 
 on:
   schedule:
-    # TSİ ile Hafta içi 06:00 - 21:00 arası her 15 dakikada bir (UTC 03:00 - 18:00)
-    - cron: '*/15 3-18 * * 1-5'
+    # Haftanın her günü, 7/24 aralıksız her 15 dakikada bir çalışır (Test Modu)
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -30,7 +30,7 @@ jobs:
 
       - name: Avci Scriptini Çalıştır
         env:
-          FORCE_RUN: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
+          FORCE_RUN: "true"
         run: |
           python tarama.py
 
