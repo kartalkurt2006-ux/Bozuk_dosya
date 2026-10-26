@@ -374,8 +374,8 @@
             "KARTN.IS": {
                 "zaman": 1792836869.4210258,
                 "ilk_fiyat": 83.4000015258789,
-                "son_fiyat": 86.5999984741211,
-                "tekrar_sayisi": 11
+                "son_fiyat": 89.05000305175781,
+                "tekrar_sayisi": 12
             },
             "ONCSM.IS": {
                 "zaman": 1792836869.4210258,
@@ -482,8 +482,8 @@
             "ERSU.IS": {
                 "zaman": 1793008167.5150478,
                 "ilk_fiyat": 17.3700008392334,
-                "son_fiyat": 17.260000228881836,
-                "tekrar_sayisi": 5
+                "son_fiyat": 17.290000915527344,
+                "tekrar_sayisi": 6
             }
         },
         "deli_gitan_1h": {
