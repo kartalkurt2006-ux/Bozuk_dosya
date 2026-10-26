@@ -184,8 +184,8 @@
             "CEMAS.IS": {
                 "zaman": 1793003029.0574245,
                 "ilk_fiyat": 2.380000114440918,
-                "son_fiyat": 2.359999895095825,
-                "tekrar_sayisi": 2
+                "son_fiyat": 2.380000114440918,
+                "tekrar_sayisi": 3
             },
             "GZNMI.IS": {
                 "zaman": 1793003029.0574245,
@@ -258,6 +258,18 @@
                 "ilk_fiyat": 6.800000190734863,
                 "son_fiyat": 6.800000190734863,
                 "tekrar_sayisi": 2
+            },
+            "CUSAN.IS": {
+                "zaman": 1793022837.342929,
+                "ilk_fiyat": 15.020000457763672,
+                "son_fiyat": 15.020000457763672,
+                "tekrar_sayisi": 1
+            },
+            "SEKUR.IS": {
+                "zaman": 1793022837.342929,
+                "ilk_fiyat": 3.319999933242798,
+                "son_fiyat": 3.319999933242798,
+                "tekrar_sayisi": 1
             }
         },
         "kartal_1s": {
@@ -374,8 +386,8 @@
             "KARTN.IS": {
                 "zaman": 1792836869.4210258,
                 "ilk_fiyat": 83.4000015258789,
-                "son_fiyat": 90.1500015258789,
-                "tekrar_sayisi": 14
+                "son_fiyat": 92.94999694824219,
+                "tekrar_sayisi": 15
             },
             "ONCSM.IS": {
                 "zaman": 1792836869.4210258,
@@ -501,6 +513,18 @@
                 "zaman": 1793015535.504154,
                 "ilk_fiyat": 19.889999389648438,
                 "son_fiyat": 19.889999389648438,
+                "tekrar_sayisi": 1
+            },
+            "GESAN.IS": {
+                "zaman": 1793022837.342929,
+                "ilk_fiyat": 33.119998931884766,
+                "son_fiyat": 33.119998931884766,
+                "tekrar_sayisi": 1
+            },
+            "SUWEN.IS": {
+                "zaman": 1793022837.342929,
+                "ilk_fiyat": 4.550000190734863,
+                "son_fiyat": 4.550000190734863,
                 "tekrar_sayisi": 1
             }
         },
@@ -799,6 +823,18 @@
                 "zaman": 1793017823.2881377,
                 "ilk_fiyat": 569.0,
                 "son_fiyat": 569.0,
+                "tekrar_sayisi": 1
+            },
+            "ALFAS.IS": {
+                "zaman": 1793022837.342929,
+                "ilk_fiyat": 24.360000610351562,
+                "son_fiyat": 24.360000610351562,
+                "tekrar_sayisi": 1
+            },
+            "SMRTG.IS": {
+                "zaman": 1793022837.342929,
+                "ilk_fiyat": 3.9700000286102295,
+                "son_fiyat": 3.9700000286102295,
                 "tekrar_sayisi": 1
             }
         }
