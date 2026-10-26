@@ -136,8 +136,8 @@
             "BURVA.IS": {
                 "zaman": 1793000121.7832847,
                 "ilk_fiyat": 227.89999389648438,
-                "son_fiyat": 222.0,
-                "tekrar_sayisi": 5
+                "son_fiyat": 218.10000610351562,
+                "tekrar_sayisi": 6
             },
             "DOCO.IS": {
                 "zaman": 1793000121.7832847,
@@ -250,14 +250,14 @@
             "KNFRT.IS": {
                 "zaman": 1793010205.185236,
                 "ilk_fiyat": 6.739999771118164,
-                "son_fiyat": 6.739999771118164,
-                "tekrar_sayisi": 1
+                "son_fiyat": 6.699999809265137,
+                "tekrar_sayisi": 2
             },
             "MTRYO.IS": {
                 "zaman": 1793010205.185236,
                 "ilk_fiyat": 6.800000190734863,
                 "son_fiyat": 6.800000190734863,
-                "tekrar_sayisi": 1
+                "tekrar_sayisi": 2
             }
         },
         "kartal_1s": {
@@ -380,8 +380,8 @@
             "ONCSM.IS": {
                 "zaman": 1792836869.4210258,
                 "ilk_fiyat": 91.0,
-                "son_fiyat": 94.19999694824219,
-                "tekrar_sayisi": 14
+                "son_fiyat": 92.80000305175781,
+                "tekrar_sayisi": 15
             },
             "SAFKR.IS": {
                 "zaman": 1792836869.4210258,
@@ -482,8 +482,8 @@
             "ERSU.IS": {
                 "zaman": 1793008167.5150478,
                 "ilk_fiyat": 17.3700008392334,
-                "son_fiyat": 17.100000381469727,
-                "tekrar_sayisi": 3
+                "son_fiyat": 17.31999969482422,
+                "tekrar_sayisi": 4
             }
         },
         "deli_gitan_1h": {
