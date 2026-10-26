@@ -136,8 +136,8 @@
             "BURVA.IS": {
                 "zaman": 1793000121.7832847,
                 "ilk_fiyat": 227.89999389648438,
-                "son_fiyat": 221.5,
-                "tekrar_sayisi": 4
+                "son_fiyat": 222.0,
+                "tekrar_sayisi": 5
             },
             "DOCO.IS": {
                 "zaman": 1793000121.7832847,
@@ -244,8 +244,8 @@
             "POLHO.IS": {
                 "zaman": 1793008167.5150478,
                 "ilk_fiyat": 12.8100004196167,
-                "son_fiyat": 12.8100004196167,
-                "tekrar_sayisi": 1
+                "son_fiyat": 12.829999923706055,
+                "tekrar_sayisi": 2
             }
         },
         "kartal_1s": {
@@ -368,8 +368,8 @@
             "ONCSM.IS": {
                 "zaman": 1792836869.4210258,
                 "ilk_fiyat": 91.0,
-                "son_fiyat": 94.44999694824219,
-                "tekrar_sayisi": 12
+                "son_fiyat": 94.25,
+                "tekrar_sayisi": 13
             },
             "SAFKR.IS": {
                 "zaman": 1792836869.4210258,
@@ -428,8 +428,8 @@
             "TUPRS.IS": {
                 "zaman": 1792999264.627272,
                 "ilk_fiyat": 365.0,
-                "son_fiyat": 364.5,
-                "tekrar_sayisi": 6
+                "son_fiyat": 363.75,
+                "tekrar_sayisi": 7
             },
             "VERUS.IS": {
                 "zaman": 1792999264.627272,
@@ -440,8 +440,8 @@
             "AYGAZ.IS": {
                 "zaman": 1793000121.7832847,
                 "ilk_fiyat": 275.25,
-                "son_fiyat": 272.5,
-                "tekrar_sayisi": 5
+                "son_fiyat": 271.25,
+                "tekrar_sayisi": 6
             },
             "TRCAS.IS": {
                 "zaman": 1793000121.7832847,
@@ -471,7 +471,7 @@
                 "zaman": 1793008167.5150478,
                 "ilk_fiyat": 17.3700008392334,
                 "son_fiyat": 17.3700008392334,
-                "tekrar_sayisi": 1
+                "tekrar_sayisi": 2
             }
         },
         "deli_gitan_1h": {
