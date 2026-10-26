@@ -374,8 +374,8 @@
             "KARTN.IS": {
                 "zaman": 1792836869.4210258,
                 "ilk_fiyat": 83.4000015258789,
-                "son_fiyat": 89.05000305175781,
-                "tekrar_sayisi": 12
+                "son_fiyat": 90.25,
+                "tekrar_sayisi": 13
             },
             "ONCSM.IS": {
                 "zaman": 1792836869.4210258,
@@ -494,8 +494,8 @@
             "KRGYO.IS": {
                 "zaman": 1793015535.504154,
                 "ilk_fiyat": 3.190000057220459,
-                "son_fiyat": 3.190000057220459,
-                "tekrar_sayisi": 1
+                "son_fiyat": 3.180000066757202,
+                "tekrar_sayisi": 2
             },
             "VBTYZ.IS": {
                 "zaman": 1793015535.504154,
@@ -556,8 +556,8 @@
             "KARTN.IS": {
                 "zaman": 1793000121.7832847,
                 "ilk_fiyat": 86.05000305175781,
-                "son_fiyat": 86.05000305175781,
-                "tekrar_sayisi": 1
+                "son_fiyat": 90.25,
+                "tekrar_sayisi": 2
             },
             "SAFKR.IS": {
                 "zaman": 1793000121.7832847,
@@ -793,6 +793,12 @@
                 "zaman": 1793015535.504154,
                 "ilk_fiyat": 19.889999389648438,
                 "son_fiyat": 19.889999389648438,
+                "tekrar_sayisi": 1
+            },
+            "ALCAR.IS": {
+                "zaman": 1793017823.2881377,
+                "ilk_fiyat": 569.0,
+                "son_fiyat": 569.0,
                 "tekrar_sayisi": 1
             }
         }
