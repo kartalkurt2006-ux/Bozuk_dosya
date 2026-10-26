@@ -392,8 +392,8 @@
             "AKSA.IS": {
                 "zaman": 1792999264.627272,
                 "ilk_fiyat": 10.40999984741211,
-                "son_fiyat": 10.380000114440918,
-                "tekrar_sayisi": 5
+                "son_fiyat": 10.390000343322754,
+                "tekrar_sayisi": 6
             },
             "BEGYO.IS": {
                 "zaman": 1792999264.627272,
@@ -484,6 +484,24 @@
                 "ilk_fiyat": 17.3700008392334,
                 "son_fiyat": 17.290000915527344,
                 "tekrar_sayisi": 6
+            },
+            "FROTO.IS": {
+                "zaman": 1793015535.504154,
+                "ilk_fiyat": 69.5999984741211,
+                "son_fiyat": 69.5999984741211,
+                "tekrar_sayisi": 1
+            },
+            "KRGYO.IS": {
+                "zaman": 1793015535.504154,
+                "ilk_fiyat": 3.190000057220459,
+                "son_fiyat": 3.190000057220459,
+                "tekrar_sayisi": 1
+            },
+            "VBTYZ.IS": {
+                "zaman": 1793015535.504154,
+                "ilk_fiyat": 19.889999389648438,
+                "son_fiyat": 19.889999389648438,
+                "tekrar_sayisi": 1
             }
         },
         "deli_gitan_1h": {
@@ -769,6 +787,12 @@
                 "zaman": 1792999264.627272,
                 "ilk_fiyat": 5.610000133514404,
                 "son_fiyat": 5.610000133514404,
+                "tekrar_sayisi": 1
+            },
+            "VBTYZ.IS": {
+                "zaman": 1793015535.504154,
+                "ilk_fiyat": 19.889999389648438,
+                "son_fiyat": 19.889999389648438,
                 "tekrar_sayisi": 1
             }
         }
