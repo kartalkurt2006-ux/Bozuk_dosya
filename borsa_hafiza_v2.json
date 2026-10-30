@@ -494,8 +494,8 @@
             "DOCO.IS": {
                 "zaman": 1792836869.4210258,
                 "ilk_fiyat": 12095.0,
-                "son_fiyat": 12095.0,
-                "tekrar_sayisi": 6
+                "son_fiyat": 11990.0,
+                "tekrar_sayisi": 7
             },
             "EGEPO.IS": {
                 "zaman": 1792836869.4210258,
@@ -1034,8 +1034,8 @@
             "POLHO.IS": {
                 "zaman": 1793178817.5026534,
                 "ilk_fiyat": 13.399999618530273,
-                "son_fiyat": 13.399999618530273,
-                "tekrar_sayisi": 1
+                "son_fiyat": 13.680000305175781,
+                "tekrar_sayisi": 2
             },
             "TABGD.IS": {
                 "zaman": 1793178817.5026534,
@@ -1101,7 +1101,7 @@
                 "zaman": 1793345458.040634,
                 "ilk_fiyat": 6.440000057220459,
                 "son_fiyat": 6.440000057220459,
-                "tekrar_sayisi": 2
+                "tekrar_sayisi": 3
             },
             "HTTBT.IS": {
                 "zaman": 1793345458.040634,
@@ -1113,7 +1113,7 @@
                 "zaman": 1793345458.040634,
                 "ilk_fiyat": 1.8300000429153442,
                 "son_fiyat": 1.8300000429153442,
-                "tekrar_sayisi": 2
+                "tekrar_sayisi": 3
             },
             "KRSTL.IS": {
                 "zaman": 1793345458.040634,
@@ -1124,8 +1124,8 @@
             "MTRYO.IS": {
                 "zaman": 1793345458.040634,
                 "ilk_fiyat": 7.349999904632568,
-                "son_fiyat": 7.400000095367432,
-                "tekrar_sayisi": 2
+                "son_fiyat": 7.360000133514404,
+                "tekrar_sayisi": 3
             },
             "TSKB.IS": {
                 "zaman": 1793345458.040634,
@@ -1445,6 +1445,12 @@
                 "zaman": 1793352468.7084687,
                 "ilk_fiyat": 8.960000038146973,
                 "son_fiyat": 8.960000038146973,
+                "tekrar_sayisi": 1
+            },
+            "POLHO.IS": {
+                "zaman": 1793359088.0338943,
+                "ilk_fiyat": 13.680000305175781,
+                "son_fiyat": 13.680000305175781,
                 "tekrar_sayisi": 1
             }
         },
