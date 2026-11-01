@@ -529,7 +529,7 @@ def run_scanner():
                 toplam_puan += 40.0
 
         # ==========================================
-        # 4. 🛡️ DENİZ DALGASI MODÜLÜ (Dalga Dip Konumu + MFI/CMF/+DI + Hull 9/Span A + Son 12 Bar RVOL)
+        # 4. 🛡️ DENİZ DALGASI MODÜLÜ (Dalga Dip Konumu + MFI/CMF/+DI + Hull 9/Span A + Son 12 Bar RVOL >= 1.8)
         # ==========================================
         if not df_15m.empty and len(df_15m) >= 40:
           close_dd = df_15m["Close"]
@@ -570,13 +570,13 @@ def run_scanner():
             
             is_hull_span_valid = hull_9_dd.iloc[-1] >= span_a_dd.iloc[-1]
 
-            # Son 12 Bar İçinde RVOL Patlaması Şartı (>= 2.5)
+            # Son 12 Bar İçinde RVOL Patlaması Şartı (>= 1.8 olarak güncellendi)
             rvol_15m_dd = volume_dd / volume_dd.rolling(20).mean()
             rvol_curr_dd = rvol_15m_dd.iloc[-1]
             son_rvol = max(son_rvol, rvol_curr_dd)
             
-            is_rvol_12bar_burst = (rvol_15m_dd.tail(12) >= 2.5).any()
-            is_rvol_extreme_burst = rvol_curr_dd >= 3.5  # Anlık çok büyük patlama bonusu için
+            is_rvol_12bar_burst = (rvol_15m_dd.tail(12) >= 1.8).any()
+            is_rvol_extreme_burst = rvol_curr_dd >= 3.0  # Anlık büyük patlama bonusu
 
             if is_dalga_dip and is_mfi_valid and is_cmf_valid and is_di_valid and is_hull_span_valid and is_rvol_12bar_burst:
               modul_puani = 25.0
