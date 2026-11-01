@@ -649,7 +649,7 @@ def run_scanner():
         if has_both_1h:
           prefix = "👑🚨 DİKKAT: 1S ÇİFTE ALARM 🚨👑"
         elif has_kartal_yakalandi:
-          prefix = "🦅🔥📊 KARTAL DALGASI YAKALANDI 📊🔥🦅"
+          prefix = "🦅📊 KARTAL DALGASI YAKALANDI"
         elif len(item['stratejiler']) >= 3:
           prefix = "🚀🚀🚀 Hisse:"
         else:
