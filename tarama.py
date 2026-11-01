@@ -169,6 +169,52 @@ def check_wave_margins(df, lookback=3, threshold_multiplier=0.80):
     return False, 50.0
 
 
+# =========================================================================
+# 🦅 KARTAL DALGASI MODÜLÜ (15DK)
+# =========================================================================
+def scan_kartal_dalgasi(df_15m, df_1h):
+    try:
+        if df_15m is None or df_1h is None or len(df_15m) < 35 or len(df_1h) < 35:
+            return False
+
+        close_1h = df_1h['Close']
+        hma20_1h = calculate_hma(close_1h, 20)
+        if hma20_1h.empty or close_1h.iloc[-1] <= hma20_1h.iloc[-1]:
+            return False
+
+        wave_triggered, _ = check_wave_margins(df_15m, lookback=3, threshold_multiplier=0.80)
+        if not wave_triggered:
+            return False
+            
+        high_15m = df_15m['High']
+        low_15m = df_15m['Low']
+        close_15m = df_15m['Close']
+        volume_15m = df_15m['Volume']
+        
+        wave_sequence = [4, 8, 5, 8, 9]
+        total_cycle = sum(wave_sequence)
+        if len(close_15m) < total_cycle:
+            return False
+            
+        recent_high = high_15m.iloc[-total_cycle:].max()
+        recent_low = low_15m.iloc[-total_cycle:].min()
+        margin_range = recent_high - recent_low
+        
+        rvol = volume_15m / volume_15m.rolling(window=20).mean()
+        rvol_curr = rvol.iloc[-1] if not pd.isna(rvol.iloc[-1]) and rvol.iloc[-1] > 0 else 1e-5
+        rvol_check = rvol_curr >= 0.6
+        
+        wave_efficiency = margin_range / rvol_curr
+        efficiency_check = wave_efficiency > 0.35
+
+        mfi_ser_15m = calculate_mfi(high_15m, low_15m, close_15m, volume_15m, 14)
+        mfi_spike_check = (mfi_ser_15m.iloc[-12:] >= 70.0).any()
+        
+        return wave_triggered and rvol_check and efficiency_check and mfi_spike_check
+    except Exception:
+        return False
+
+
 def hafiza_yukle():
   hafiza = {"kayitlar": {}}
   if os.path.exists(MERKEZI_HAFIZA_DOSYASI):
@@ -492,7 +538,7 @@ def run_scanner():
                 toplam_puan += 30.0
 
         # ==========================================
-        # 3. SÜPER 15 CROSS MODÜLÜ (22 Periyot Bollinger Sıkışması + Üst Bant Cross + ROC Erken İvme)
+        # 3. SÜPER 15 CROSS MODÜLÜ
         # ==========================================
         if not df_15m.empty and len(df_15m) >= 40:
           close_s15 = df_15m["Close"]
@@ -529,63 +575,14 @@ def run_scanner():
                 toplam_puan += 40.0
 
         # ==========================================
-        # 4. 🛡️ DENİZ DALGASI MODÜLÜ (Dalga Dip Konumu + MFI/CMF/+DI + Hull 9/Span A + Son 12 Bar RVOL >= 1.8)
+        # 4. 🦅 KARTAL DALGASI MODÜLÜ (Eski Deniz Dalgası yerine entegre edildi)
         # ==========================================
-        if not df_15m.empty and len(df_15m) >= 40:
-          close_dd = df_15m["Close"]
-          high_dd = df_15m["High"]
-          low_dd = df_15m["Low"]
-          volume_dd = df_15m["Volume"]
-
-          if not close_dd.isna().iloc[-1] and not volume_dd.isna().iloc[-1]:
-            if guncel_fiyat == 0.0:
-              guncel_fiyat = close_dd.iloc[-1]
-
-            mevcut_dalga_konumu = get_wave_position(df_15m)
-            son_konum = max(son_konum, mevcut_dalga_konumu)
-            is_dalga_dip = (0.0 <= mevcut_dalga_konumu <= 15.0)
-
-            mfi_dd = calculate_mfi(high_dd, low_dd, close_dd, volume_dd, 14)
-            mfi_curr_dd = mfi_dd.iloc[-1]
-            son_mfi = max(son_mfi, mfi_curr_dd)
-            is_mfi_valid = mfi_curr_dd > 50.0
-
-            cmf_dd = calculate_cmf(high_dd, low_dd, close_dd, volume_dd, 20)
-            cmf_curr_dd = cmf_dd.iloc[-1]
-            son_cmf = max(son_cmf, cmf_curr_dd)
-            is_cmf_valid = cmf_curr_dd > 0.0
-
-            up_15_dd = high_dd.diff()
-            down_15_dd = -low_dd.diff()
-            p_dm_15_dd = up_15_dd.where((up_15_dd > down_15_dd) & (up_15_dd > 0), 0)
-            tr_15_dd = pd.concat([high_dd - low_dd, (high_dd - close_dd.shift()).abs(), (low_dd - close_dd.shift()).abs()], axis=1).max(axis=1)
-            p_di_15_series_dd = 100 * (p_dm_15_dd.rolling(14).sum() / (tr_15_dd.rolling(14).sum() + 1e-10))
-            p_di_15_curr_dd = p_di_15_series_dd.iloc[-1]
-            son_plus_di = max(son_plus_di, p_di_15_curr_dd)
-            is_di_valid = p_di_15_curr_dd > 20.0
-
-            hull_9_dd = calculate_hma(close_dd, 9)
-            span_a_dd = ((high_dd.rolling(9).max() + low_dd.rolling(9).min()) / 2 + 
-                         (high_dd.rolling(26).max() + low_dd.rolling(26).min()) / 2) / 2
-            
-            is_hull_span_valid = hull_9_dd.iloc[-1] >= span_a_dd.iloc[-1]
-
-            # Son 12 Bar İçinde RVOL Patlaması Şartı (>= 1.8 olarak güncellendi)
-            rvol_15m_dd = volume_dd / volume_dd.rolling(20).mean()
-            rvol_curr_dd = rvol_15m_dd.iloc[-1]
-            son_rvol = max(son_rvol, rvol_curr_dd)
-            
-            is_rvol_12bar_burst = (rvol_15m_dd.tail(12) >= 1.8).any()
-            is_rvol_extreme_burst = rvol_curr_dd >= 3.0  # Anlık büyük patlama bonusu
-
-            if is_dalga_dip and is_mfi_valid and is_cmf_valid and is_di_valid and is_hull_span_valid and is_rvol_12bar_burst:
-              modul_puani = 25.0
-              if is_rvol_extreme_burst:
-                modul_puani += 15.0  # Ekstra aşırı hacim bonusu
-
-              if kayit_guncelle("deniz_dalgasi_hibrit"):
-                tetiklenen_str.append("DENİZ DALGASI")
-                toplam_puan += modul_puani
+        if not df_1h.empty and not df_15m.empty and len(df_15m) >= 40:
+          if scan_kartal_dalgasi(df_15m, df_1h):
+            if kayit_guncelle("kartal_dalgasi"):
+              tetiklenen_str.append("KARTAL DALGASI")
+              toplam_puan += 35.0
+              son_konum = max(son_konum, get_wave_position(df_15m))
 
         if tetiklenen_str:
           if toplam_puan == 0:
@@ -599,10 +596,25 @@ def run_scanner():
           except Exception:
               pass
 
+          strats_upper_chk = [s.upper() for s in tetiklenen_str]
+          has_both_1h_chk = ("1 SAAT YAKALA" in strats_upper_chk) and ("DELİRDİ 1 SAAT" in strats_upper_chk)
+          has_kartal_yakalandi_chk = ("1 SAAT YAKALA" in strats_upper_chk) and ("KARTAL DALGASI" in strats_upper_chk)
+          strat_count_chk = len(tetiklenen_str)
+
+          if has_both_1h_chk:
+              ozel_oncelik = 4
+          elif has_kartal_yakalandi_chk:
+              ozel_oncelik = 3
+          elif strat_count_chk >= 2:
+              ozel_oncelik = 2
+          else:
+              ozel_oncelik = 1
+
           toplanan_sinyaller.append({
               "temiz_isim": temiz_isim,
               "fiyat": guncel_fiyat,
               "puan": toplam_puan,
+              "ozel_oncelik": ozel_oncelik,
               "stratejiler": tetiklenen_str,
               "rsi": son_rsi,
               "rvol": son_rvol,
@@ -622,7 +634,7 @@ def run_scanner():
         continue
 
   if toplanan_sinyaller:
-    toplanan_sinyaller.sort(key=lambda x: (len(x['stratejiler']), x['puan']), reverse=False)
+    toplanan_sinyaller.sort(key=lambda x: (x['ozel_oncelik'], len(x['stratejiler']), x['puan']), reverse=False)
 
     grup_boyutu = 5
     for i in range(0, len(toplanan_sinyaller), grup_boyutu):
@@ -632,9 +644,12 @@ def run_scanner():
       for item in alt_grup:
         strats_upper = [s.upper() for s in item['stratejiler']]
         has_both_1h = ("1 SAAT YAKALA" in strats_upper) and ("DELİRDİ 1 SAAT" in strats_upper)
+        has_kartal_yakalandi = ("1 SAAT YAKALA" in strats_upper) and ("KARTAL DALGASI" in strats_upper)
 
         if has_both_1h:
           prefix = "👑🚨 DİKKAT: 1S ÇİFTE ALARM 🚨👑"
+        elif has_kartal_yakalandi:
+          prefix = "🦅📊 KARTAL DALGASI YAKALANDI"
         elif len(item['stratejiler']) >= 3:
           prefix = "🚀🚀🚀 Hisse:"
         else:
@@ -646,8 +661,8 @@ def run_scanner():
           strat_upper = strat.upper()
           if "TEHLİKELİ HİBRİT" in strat_upper:
             mesaj_satirlari.append(f"• 🟢🟢🟢 {strat} (MFI:{item['mfi']:.1f} | +DI:{item['plus_di']:.1f} | CMF:{item['cmf']:.2f} | Konum:%{item['konum']:.1f})")
-          elif "DENİZ DALGASI" in strat_upper:
-            mesaj_satirlari.append(f"• 🛡⚡ {strat} (RVOL(12b):{item['rvol']:.2f} | MFI:{item['mfi']:.1f} | +DI:{item['plus_di']:.1f} | Konum:%{item['konum']:.1f})")
+          elif "KARTAL DALGASI" in strat_upper:
+            mesaj_satirlari.append(f"• 🦅📊 {strat} (MFI:{item['mfi']:.1f} | +DI:{item['plus_di']:.1f} | Konum:%{item['konum']:.1f})")
           elif "DELİRDİ" in strat_upper and "1 SAAT" in strat_upper:
             mesaj_satirlari.append(f"• 💥💥💥 {strat} (RVOL:{item['rvol']:.2f} | MFI:{item['mfi']:.1f} | +DI:{item['plus_di']:.1f} | Konum:%{item['konum']:.1f})")
           elif "SÜPER 15 CROSS" in strat_upper:
@@ -662,7 +677,7 @@ def run_scanner():
         mesaj_satirlari.append("----------------------------------------")
 
       final_mesaj = "\n".join(mesaj_satirlari)
-      send_ntfy(final_mesaj, "borsa_senet")
+      send_ntfy(final_mesaj, "kaptan_78")
       time.sleep(0.4)
 
   print("\nTüm Hisseler tarandı ve süreç tamamlandı.")
