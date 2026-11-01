@@ -601,7 +601,7 @@ def run_scanner():
           has_kartal_yakalandi_chk = ("1 SAAT YAKALA" in strats_upper_chk) and ("KARTAL DALGASI" in strats_upper_chk)
           strat_count_chk = len(tetiklenen_str)
 
-          # Öncelik hiyerarşisi: 1S Çifte alarm her zaman en üstte (4), Kartal Dalgası çifte alarmı hemen altında (3)
+          # Öncelik hiyerarşisi ataması
           if has_both_1h_chk:
               ozel_oncelik = 4
           elif has_kartal_yakalandi_chk:
@@ -635,7 +635,8 @@ def run_scanner():
         continue
 
   if toplanan_sinyaller:
-    toplanan_sinyaller.sort(key=lambda x: (x['ozel_oncelik'], len(x['stratejiler']), x['puan']), reverse=False)
+    # DÜZELTME BURADA: reverse=True yapılarak en yüksek öncelik (4 ve 3) en üste getirildi!
+    toplanan_sinyaller.sort(key=lambda x: (x['ozel_oncelik'], len(x['stratejiler']), x['puan']), reverse=True)
 
     grup_boyutu = 5
     for i in range(0, len(toplanan_sinyaller), grup_boyutu):
@@ -647,7 +648,7 @@ def run_scanner():
         has_both_1h = ("1 SAAT YAKALA" in strats_upper) and ("DELİRDİ 1 SAAT" in strats_upper)
         has_kartal_yakalandi = ("1 SAAT YAKALA" in strats_upper) and ("KARTAL DALGASI" in strats_upper)
 
-        # Etiketleme hiyerarşisi (Üçlü tetiklenmede dahi "Dikkat Çifte Alarm" mutlak üstünlüğe sahip)
+        # Etiketleme hiyerarşisi
         if has_both_1h:
           prefix = "👑🚨 DİKKAT: 1S ÇİFTE ALARM 🚨👑"
         elif has_kartal_yakalandi:
