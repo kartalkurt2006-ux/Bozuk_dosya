@@ -635,13 +635,14 @@ def run_scanner():
         continue
 
   if toplanan_sinyaller:
-    # DÜZELTME: Parantez hatası giderildi ( -len(x['stratejiler']), )
     toplanan_sinyaller.sort(key=lambda x: (-x['ozel_oncelik'], -len(x['stratejiler']), -x['puan']))
 
     grup_boyutu = 5
     gruplar = [toplanan_sinyaller[i:i + grup_boyutu] for i in range(0, len(toplanan_sinyaller), grup_boyutu)]
     
-    for alt_grup in gruplar:
+    # KESİN ÇÖZÜM: Android bildirim panelinde en önemli grubun (çifte alarm / kartal dalgası) 
+    # en üstte görünmesi için gönderim sırasını tersine çeviriyoruz (reversed).
+    for alt_grup in reversed(gruplar):
       mesaj_satirlari = ["----------------------------------------"]
 
       for item in alt_grup:
