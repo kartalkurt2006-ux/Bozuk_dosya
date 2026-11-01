@@ -635,14 +635,16 @@ def run_scanner():
         continue
 
   if toplanan_sinyaller:
-    toplanan_sinyaller.sort(key=lambda x: (-x['ozel_oncelik'], -len(x['stratejiler']), -x['puan']))
+    toplanan_sinyaller.sort(key=lambda x: (-x['ozel_oncelik'], -len(x['stratejiler'], -x['puan'])) # type: ignore
 
     grup_boyutu = 5
     gruplar = [toplanan_sinyaller[i:i + grup_boyutu] for i in range(0, len(toplanan_sinyaller), grup_boyutu)]
     
-    # ÇÖZÜM: Önce normal/tekli mesaj grupları gönderiliyor, en son en önemli çifte alarm grubu gönderiliyor
-    # Böylece en son gönderilen (en önemli olan) telefon bildirim panelinde en üste çıkıyor.
-    for alt_grup in reversed(gruplar):
+    # ANDROID BİLDİRİM MANTIĞI ÇÖZÜMÜ: 
+    # Android bildirim yığınında "en eski" olan en üstte görünür. 
+    # Bu yüzden en önemli (çifte alarm) grubunu İLK gönderiyoruz (en eski oluyor -> en üste çıkıyor),
+    # Tekli/normal grupları EN SON gönderiyoruz (en yeni oluyor -> en alta iniyor).
+    for alt_grup in gruplar:
       mesaj_satirlari = ["----------------------------------------"]
 
       for item in alt_grup:
