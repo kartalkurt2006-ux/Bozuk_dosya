@@ -635,8 +635,8 @@ def run_scanner():
         continue
 
   if toplanan_sinyaller:
-    # DÜZELTME BURADA: reverse=True yapılarak en yüksek öncelik (4 ve 3) en üste getirildi!
-    toplanan_sinyaller.sort(key=lambda x: (x['ozel_oncelik'], len(x['stratejiler']), x['puan']), reverse=True)
+    # NEGATİF SIRALAMA: En yüksek öncelikli alarmlar (4 ve 3) kesinlikle en üste gelecek şekilde sıralandı
+    toplanan_sinyaller.sort(key=lambda x: (-x['ozel_oncelik'], -len(x['stratejiler']), -x['puan']))
 
     grup_boyutu = 5
     for i in range(0, len(toplanan_sinyaller), grup_boyutu):
