@@ -277,7 +277,7 @@ def run_scanner():
   is_manual_run = os.environ.get("FORCE_RUN", "false").lower() == "true"
   
   print(
-      f"[{datetime.now(TZ_TR).strftime('%Y-%m-%d %H:%M:%S')}] Erken Avcı (Hibrit Deniz Dalgası) Sistemi Başlatıldı... (Manuel Mod: {is_manual_run})"
+      f"[{datetime.now(TZ_TR).strftime('%Y-%m-%d %H:%M:%S')}] Erken Avcı (Hibrit Sentetik 1S) Sistemi Başlatıldı... (Manuel Mod: {is_manual_run})"
   )
 
   tum_hafiza = hafiza_yukle()
@@ -287,10 +287,10 @@ def run_scanner():
   stock_chunks = [STOCKS[i:i + chunk_size] for i in range(0, len(STOCKS), chunk_size)]
 
   def fetch_chunk_data(chunk_idx, chunk):
-    print(f"Grup {chunk_idx}/{len(stock_chunks)} verileri indiriliyor ({len(chunk)} hisse)...")
-    df_1h_all = download_with_retry(chunk, "1h", "2mo")
+    print(f"Grup {chunk_idx}/{len(stock_chunks)} 15m verileri indiriliyor ({len(chunk)} hisse)...")
+    # Artık 1h veriyi Yahoo'dan indirmeye gerek kalmadı; 15m veriden sentetik üreteceğiz.
     df_15m_all = download_with_retry(chunk, "15m", "10d")
-    return chunk_idx, chunk, df_1h_all, df_15m_all
+    return chunk_idx, chunk, df_15m_all
 
   chunk_results = []
   with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
@@ -303,7 +303,7 @@ def run_scanner():
 
   chunk_results.sort(key=lambda x: x[0])
 
-  for chunk_idx, chunk, df_1h_all, df_15m_all in chunk_results:
+  for chunk_idx, chunk, df_15m_all in chunk_results:
     for clean_ticker in chunk:
       temiz_isim = clean_ticker.replace(".IS", "")
       tetiklenen_str = []
@@ -340,14 +340,28 @@ def run_scanner():
                 return True
             return simdi_epoch - son_zaman > COOLDOWN_SECONDS
 
-        # ==========================================
-        # 1. 1 SAATLİK VERİ ANALİZİ (Aktif)
-        # ==========================================
-        df_1h = extract_ticker_df(df_1h_all, clean_ticker, chunk)
-        if not df_1h.empty and len(df_1h) >= 40:
-          if isinstance(df_1h.columns, pd.MultiIndex):
-            df_1h.columns = df_1h.columns.get_level_values(0)
+        # Hisse için 15m veriyi alalım
+        df_15m = extract_ticker_df(df_15m_all, clean_ticker, chunk)
+        
+        # Sentetik (Canlı) 1 Saatlik Veri Üretimi (Resample)
+        df_1h = pd.DataFrame()
+        if not df_15m.empty and len(df_15m) >= 40:
+          if isinstance(df_15m.columns, pd.MultiIndex):
+            df_15m.columns = df_15m.columns.get_level_values(0)
+          
+          # 15 dakikalık verileri 1 saatlik (`1h`) barlara dönüştürerek anlık veri üretiyoruz
+          df_1h = df_15m.resample('1h').agg({
+              'Open': 'first',
+              'High': 'max',
+              'Low': 'min',
+              'Close': 'last',
+              'Volume': 'sum'
+          }).dropna()
 
+        # ==========================================
+        # 1. SENTETİK 1 SAATLİK VERİ ANALİZİ (1 Saat Yakala & DELİRDİ 1 Saat)
+        # ==========================================
+        if not df_1h.empty and len(df_1h) >= 20:
           close_1h = df_1h["Close"]
           high_1h = df_1h["High"]
           low_1h = df_1h["Low"]
@@ -369,7 +383,7 @@ def run_scanner():
             mfi_1h = calculate_mfi(high_1h, low_1h, close_1h, volume_1h, 14)
             son_mfi = mfi_1h.iloc[-1]
 
-            # +DI / -DI (14) Hesaplamaları
+            # +DI (14)
             up_move_1h = high_1h.diff()
             down_move_1h = -low_1h.diff()
             plus_dm_1h = up_move_1h.where((up_move_1h > down_move_1h) & (up_move_1h > 0), 0)
@@ -387,14 +401,14 @@ def run_scanner():
 
             hma20_1h = calculate_hma(close_1h, 20)
 
-            # Strateji: 1 Saat Yakala
-            if (close_curr_1h > hma20_1h.iloc[-1]) and (rsi_curr_1h > 50) and (plus_di_curr_1h > 25) and wave_breakout_1h:
+            # Strateji: 1 Saat Yakala (Canlı Sentetik Veri ile)
+            if not hma20_1h.empty and (close_curr_1h > hma20_1h.iloc[-1]) and (rsi_curr_1h > 50) and (plus_di_curr_1h > 25) and wave_breakout_1h:
               if kayit_guncelle("1h_dalga_gorsel"):
                 tetiklenen_str.append("1 Saat Yakala")
                 toplam_puan += 25.0
 
-            # Strateji: DELİRDİ 1 Saat
-            if (close_curr_1h > hma20_1h.iloc[-1]) and (rvol_curr_1h >= 2.0) and wave_breakout_1h:
+            # Strateji: DELİRDİ 1 Saat (Canlı Sentetik Veri ile)
+            if not hma20_1h.empty and (close_curr_1h > hma20_1h.iloc[-1]) and (rvol_curr_1h >= 2.0) and wave_breakout_1h:
               if kayit_guncelle("deli_gitan_1h"):
                 tetiklenen_str.append("DELİRDİ 1 Saat")
                 toplam_puan += 35.0
@@ -402,7 +416,6 @@ def run_scanner():
         # ==========================================
         # 2. 15 DAKİKALIK VERİ ANALİZİ (TEHLİKELİ HİBRİT + ICHIMOKU TENKAN/KIJUN)
         # ==========================================
-        df_15m = extract_ticker_df(df_15m_all, clean_ticker, chunk)
         if not df_15m.empty and len(df_15m) >= 40:
           if isinstance(df_15m.columns, pd.MultiIndex):
             df_15m.columns = df_15m.columns.get_level_values(0)
@@ -442,7 +455,7 @@ def run_scanner():
             ichimoku_trigger = ichimoku_kesisim or ichimoku_ustunde
 
             # Strateji: TEHLİKELİ HİBRİT (Ichimoku Entegreli)
-            konum_yuzde_1h_curr = check_wave_margins(df_1h, lookback=1)[1] if not df_15m.empty else get_wave_position(df_15m)
+            konum_yuzde_1h_curr = check_wave_margins(df_1h, lookback=1)[1] if not df_1h.empty else get_wave_position(df_15m)
             if (0.0 <= konum_yuzde_1h_curr <= 15.0) and (mfi_curr_15 > 50.0) and (plus_di_curr_15 > 20.0) and (cmf_curr_15 > 0.0) and ichimoku_trigger:
               if kayit_guncelle("dip_hibrit"):
                 tetiklenen_str.append("TEHLİKELİ HİBRİT")
