@@ -288,7 +288,6 @@ def run_scanner():
 
   def fetch_chunk_data(chunk_idx, chunk):
     print(f"Grup {chunk_idx}/{len(stock_chunks)} 15m verileri indiriliyor ({len(chunk)} hisse)...")
-    # Artık 1h veriyi Yahoo'dan indirmeye gerek kalmadı; 15m veriden sentetik üreteceğiz.
     df_15m_all = download_with_retry(chunk, "15m", "10d")
     return chunk_idx, chunk, df_15m_all
 
@@ -349,7 +348,6 @@ def run_scanner():
           if isinstance(df_15m.columns, pd.MultiIndex):
             df_15m.columns = df_15m.columns.get_level_values(0)
           
-          # 15 dakikalık verileri 1 saatlik (`1h`) barlara dönüştürerek anlık veri üretiyoruz
           df_1h = df_15m.resample('1h').agg({
               'Open': 'first',
               'High': 'max',
@@ -414,7 +412,7 @@ def run_scanner():
                 toplam_puan += 35.0
 
         # ==========================================
-        # 2. 15 DAKİKALIK VERİ ANALİZİ (TEHLİKELİ HİBRİT + ICHIMOKU TENKAN/KIJUN)
+        # 2. 15 DAKİKALIK VERİ ANALİZİ (GÜNCELLENEN TEHLİKELİ HİBRİT)
         # ==========================================
         if not df_15m.empty and len(df_15m) >= 40:
           if isinstance(df_15m.columns, pd.MultiIndex):
@@ -433,11 +431,17 @@ def run_scanner():
             mfi_curr_15 = mfi_15m.iloc[-1]
             son_mfi = max(son_mfi, mfi_curr_15)
 
+            # DI Hesaplamaları (15m)
             up_move_15m = high_15m.diff()
             down_move_15m = -low_15m.diff()
             plus_dm_15m = up_move_15m.where((up_move_15m > down_move_15m) & (up_move_15m > 0), 0)
+            minus_dm_15m = down_move_15m.where((down_move_15m > up_move_15m) & (down_move_15m > 0), 0)
             tr_15m = pd.concat([high_15m - low_15m, (high_15m - close_15m.shift()).abs(), (low_15m - close_15m.shift()).abs()], axis=1).max(axis=1)
-            plus_di_curr_15 = (100 * (plus_dm_15m.rolling(14).sum() / (tr_15m.rolling(14).sum() + 1e-10))).iloc[-1]
+            
+            plus_di_series_15 = 100 * (plus_dm_15m.rolling(14).sum() / (tr_15m.rolling(14).sum() + 1e-10))
+            minus_di_series_15 = 100 * (minus_dm_15m.rolling(14).sum() / (tr_15m.rolling(14).sum() + 1e-10))
+            
+            plus_di_curr_15 = plus_di_series_15.iloc[-1]
             son_plus_di = max(son_plus_di, plus_di_curr_15)
 
             cmf_15m = calculate_cmf(high_15m, low_15m, close_15m, volume_15m, 20)
@@ -454,9 +458,42 @@ def run_scanner():
             ichimoku_ustunde = tenkan_9.iloc[-1] >= kijun_26.iloc[-1]
             ichimoku_trigger = ichimoku_kesisim or ichimoku_ustunde
 
-            # Strateji: TEHLİKELİ HİBRİT (Ichimoku Entegreli)
+            # 1h Dalga Konumu ve HMA 20 Kontrolü (Tehlikeli Hibrit İçin)
             konum_yuzde_1h_curr = check_wave_margins(df_1h, lookback=1)[1] if not df_1h.empty else get_wave_position(df_15m)
-            if (0.0 <= konum_yuzde_1h_curr <= 15.0) and (mfi_curr_15 > 50.0) and (plus_di_curr_15 > 20.0) and (cmf_curr_15 > 0.0) and ichimoku_trigger:
+            
+            # 1h HMA 20 Şartı (Fiyat HMA 20 üzerinde veya kessin)
+            h_condition = True
+            if not df_1h.empty and len(df_1h) >= 20:
+              hma20_1h_vals = calculate_hma(df_1h["Close"], 20)
+              if not hma20_1h_vals.empty:
+                c_1h = df_1h["Close"].iloc[-1]
+                p_c_1h = df_1h["Close"].iloc[-2]
+                h20_1h = hma20_1h_vals.iloc[-1]
+                p_h20_1h = hma20_1h_vals.iloc[-2]
+                h_condition = (c_1h >= h20_1h) or (p_c_1h < p_h20_1h and c_1h >= h20_1h)
+
+            # Son 12 Mumda +DI ve -DI Kesişimi / Üzerinde Olma Şartı
+            di_condition = (
+                (plus_di_series_15.tail(12) >= minus_di_series_15.tail(12)).any() or 
+                ((plus_di_series_15 > minus_di_series_15) & (plus_di_series_15.shift(1) <= minus_di_series_15.shift(1))).tail(12).any()
+            )
+
+            # Son 12 Mumda +DI 30 Seviyesi Şartı (Kessin veya üzerinde olsun)
+            plus_di_30_condition = (
+                (plus_di_series_15.tail(12) >= 30).any() or 
+                ((plus_di_series_15 >= 30) & (plus_di_series_15.shift(1) < 30)).tail(12).any()
+            )
+
+            # Strateji: TEHLİKELİ HİBRİT (Güncellenmiş Kurallarla)
+            if (
+                (0.0 <= konum_yuzde_1h_curr <= 15.0) and 
+                h_condition and
+                (mfi_curr_15 > 50.0) and 
+                (cmf_curr_15 > 0.0) and 
+                ichimoku_trigger and 
+                di_condition and 
+                plus_di_30_condition
+            ):
               if kayit_guncelle("dip_hibrit"):
                 tetiklenen_str.append("TEHLİKELİ HİBRİT")
                 toplam_puan += 30.0
@@ -499,7 +536,7 @@ def run_scanner():
                 toplam_puan += 40.0
 
         # ==========================================
-        # 4. 🛡️ DENİZ DALGASI MODÜLÜ (YENİ HİBRİT: Dalga Dip Konumu + MFI/CMF/+DI + Hull 9/Span A + Verimlilik Puanı)
+        # 4. 🛡️ DENİZ DALGASI MODÜLÜ (Dalga Dip Konumu + MFI/CMF/+DI + Hull 9/Span A)
         # ==========================================
         if not df_15m.empty and len(df_15m) >= 40:
           close_dd = df_15m["Close"]
@@ -511,12 +548,10 @@ def run_scanner():
             if guncel_fiyat == 0.0:
               guncel_fiyat = close_dd.iloc[-1]
 
-            # 1. Dalga Konumu (4-8-5-8-9 Dip Bölgesi: %0 - %15)
             mevcut_dalga_konumu = get_wave_position(df_15m)
             son_konum = max(son_konum, mevcut_dalga_konumu)
             is_dalga_dip = (0.0 <= mevcut_dalga_konumu <= 15.0)
 
-            # 2. Para Akışı ve Güç Filtreleri (MFI, CMF, +DI)
             mfi_dd = calculate_mfi(high_dd, low_dd, close_dd, volume_dd, 14)
             mfi_curr_dd = mfi_dd.iloc[-1]
             son_mfi = max(son_mfi, mfi_curr_dd)
@@ -536,24 +571,21 @@ def run_scanner():
             son_plus_di = max(son_plus_di, p_di_15_curr_dd)
             is_di_valid = p_di_15_curr_dd > 20.0
 
-            # 3. Trend ve Denge Onayı (Hull 9 ve Ichimoku Span A - 15m)
             hull_9_dd = calculate_hma(close_dd, 9)
             span_a_dd = ((high_dd.rolling(9).max() + low_dd.rolling(9).min()) / 2 + 
                          (high_dd.rolling(26).max() + low_dd.rolling(26).min()) / 2) / 2
             
             is_hull_span_valid = hull_9_dd.iloc[-1] >= span_a_dd.iloc[-1]
 
-            # 4. Hacim Çarpanı (RVOL)
             rvol_15m_dd = volume_dd / volume_dd.rolling(20).mean()
             rvol_curr_dd = rvol_15m_dd.iloc[-1]
             son_rvol = max(son_rvol, rvol_curr_dd)
             is_rvol_burst = rvol_curr_dd >= 2.5
 
-            # Tüm Koşulların Sağlanması Halinde Tetiklenme ve Verimlilik Puanı Hesaplama
             if is_dalga_dip and is_mfi_valid and is_cmf_valid and is_di_valid and is_hull_span_valid:
               modul_puani = 25.0
               if is_rvol_burst:
-                modul_puani += 15.0  # Hacim patlaması ek bonus puanı
+                modul_puani += 15.0
 
               if kayit_guncelle("deniz_dalgasi_hibrit"):
                 tetiklenen_str.append("DENİZ DALGASI")
