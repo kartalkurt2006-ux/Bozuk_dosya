@@ -575,7 +575,7 @@ def run_scanner():
                 toplam_puan += 40.0
 
         # ==========================================
-        # 4. 🦅 KARTAL DALGASI MODÜLÜ (Eski Deniz Dalgası yerine entegre edildi)
+        # 4. 🦅 KARTAL DALGASI MODÜLÜ
         # ==========================================
         if not df_1h.empty and not df_15m.empty and len(df_15m) >= 40:
           if scan_kartal_dalgasi(df_15m, df_1h):
@@ -601,6 +601,7 @@ def run_scanner():
           has_kartal_yakalandi_chk = ("1 SAAT YAKALA" in strats_upper_chk) and ("KARTAL DALGASI" in strats_upper_chk)
           strat_count_chk = len(tetiklenen_str)
 
+          # Öncelik hiyerarşisi: 1S Çifte alarm her zaman en üstte (4), Kartal Dalgası çifte alarmı hemen altında (3)
           if has_both_1h_chk:
               ozel_oncelik = 4
           elif has_kartal_yakalandi_chk:
@@ -646,10 +647,11 @@ def run_scanner():
         has_both_1h = ("1 SAAT YAKALA" in strats_upper) and ("DELİRDİ 1 SAAT" in strats_upper)
         has_kartal_yakalandi = ("1 SAAT YAKALA" in strats_upper) and ("KARTAL DALGASI" in strats_upper)
 
+        # Etiketleme hiyerarşisi (Üçlü tetiklenmede dahi "Dikkat Çifte Alarm" mutlak üstünlüğe sahip)
         if has_both_1h:
           prefix = "👑🚨 DİKKAT: 1S ÇİFTE ALARM 🚨👑"
         elif has_kartal_yakalandi:
-          prefix = "🦅📊 KARTAL DALGASI YAKALANDI"
+          prefix = "🦅🔥📊 KARTAL DALGASI YAKALANDI 📊🔥🦅"
         elif len(item['stratejiler']) >= 3:
           prefix = "🚀🚀🚀 Hisse:"
         else:
