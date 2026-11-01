@@ -635,12 +635,14 @@ def run_scanner():
         continue
 
   if toplanan_sinyaller:
-    # NEGATİF SIRALAMA: En yüksek öncelikli alarmlar (4 ve 3) kesinlikle en üste gelecek şekilde sıralandı
     toplanan_sinyaller.sort(key=lambda x: (-x['ozel_oncelik'], -len(x['stratejiler']), -x['puan']))
 
     grup_boyutu = 5
-    for i in range(0, len(toplanan_sinyaller), grup_boyutu):
-      alt_grup = toplanan_sinyaller[i:i + grup_boyutu]
+    gruplar = [toplanan_sinyaller[i:i + grup_boyutu] for i in range(0, len(toplanan_sinyaller), grup_boyutu)]
+    
+    # ÇÖZÜM: Önce normal/tekli mesaj grupları gönderiliyor, en son en önemli çifte alarm grubu gönderiliyor
+    # Böylece en son gönderilen (en önemli olan) telefon bildirim panelinde en üste çıkıyor.
+    for alt_grup in reversed(gruplar):
       mesaj_satirlari = ["----------------------------------------"]
 
       for item in alt_grup:
