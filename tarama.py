@@ -412,7 +412,7 @@ def run_scanner():
                 toplam_puan += 35.0
 
         # ==========================================
-        # 2. 15 DAKİKALIK VERİ ANALİZİ (GÜNCELLENEN TEHLİKELİ HİBRİT)
+        # 2. 15 DAKİKALIK VERİ ANALİZİ (TEHLİKELİ HİBRİT)
         # ==========================================
         if not df_15m.empty and len(df_15m) >= 40:
           if isinstance(df_15m.columns, pd.MultiIndex):
@@ -431,7 +431,6 @@ def run_scanner():
             mfi_curr_15 = mfi_15m.iloc[-1]
             son_mfi = max(son_mfi, mfi_curr_15)
 
-            # DI Hesaplamaları (15m)
             up_move_15m = high_15m.diff()
             down_move_15m = -low_15m.diff()
             plus_dm_15m = up_move_15m.where((up_move_15m > down_move_15m) & (up_move_15m > 0), 0)
@@ -450,7 +449,6 @@ def run_scanner():
 
             son_konum = max(son_konum, get_wave_position(df_15m))
 
-            # Ichimoku Tenkan-sen (9) ve Kijun-sen (26) Hesaplamaları (15m)
             tenkan_9 = (high_15m.rolling(9).max() + low_15m.rolling(9).min()) / 2
             kijun_26 = (high_15m.rolling(26).max() + low_15m.rolling(26).min()) / 2
 
@@ -458,10 +456,8 @@ def run_scanner():
             ichimoku_ustunde = tenkan_9.iloc[-1] >= kijun_26.iloc[-1]
             ichimoku_trigger = ichimoku_kesisim or ichimoku_ustunde
 
-            # 1h Dalga Konumu ve HMA 20 Kontrolü (Tehlikeli Hibrit İçin)
             konum_yuzde_1h_curr = check_wave_margins(df_1h, lookback=1)[1] if not df_1h.empty else get_wave_position(df_15m)
             
-            # 1h HMA 20 Şartı (Fiyat HMA 20 üzerinde veya kessin)
             h_condition = True
             if not df_1h.empty and len(df_1h) >= 20:
               hma20_1h_vals = calculate_hma(df_1h["Close"], 20)
@@ -472,19 +468,16 @@ def run_scanner():
                 p_h20_1h = hma20_1h_vals.iloc[-2]
                 h_condition = (c_1h >= h20_1h) or (p_c_1h < p_h20_1h and c_1h >= h20_1h)
 
-            # Son 12 Mumda +DI ve -DI Kesişimi / Üzerinde Olma Şartı
             di_condition = (
                 (plus_di_series_15.tail(12) >= minus_di_series_15.tail(12)).any() or 
                 ((plus_di_series_15 > minus_di_series_15) & (plus_di_series_15.shift(1) <= minus_di_series_15.shift(1))).tail(12).any()
             )
 
-            # Son 12 Mumda +DI 30 Seviyesi Şartı (Kessin veya üzerinde olsun)
             plus_di_30_condition = (
                 (plus_di_series_15.tail(12) >= 30).any() or 
                 ((plus_di_series_15 >= 30) & (plus_di_series_15.shift(1) < 30)).tail(12).any()
             )
 
-            # Strateji: TEHLİKELİ HİBRİT (Güncellenmiş Kurallarla)
             if (
                 (0.0 <= konum_yuzde_1h_curr <= 15.0) and 
                 h_condition and
@@ -536,7 +529,7 @@ def run_scanner():
                 toplam_puan += 40.0
 
         # ==========================================
-        # 4. 🛡️ DENİZ DALGASI MODÜLÜ (Dalga Dip Konumu + MFI/CMF/+DI + Hull 9/Span A)
+        # 4. 🛡️ DENİZ DALGASI MODÜLÜ (Dalga Dip Konumu + MFI/CMF/+DI + Hull 9/Span A + Son 12 Bar RVOL)
         # ==========================================
         if not df_15m.empty and len(df_15m) >= 40:
           close_dd = df_15m["Close"]
@@ -577,15 +570,18 @@ def run_scanner():
             
             is_hull_span_valid = hull_9_dd.iloc[-1] >= span_a_dd.iloc[-1]
 
+            # Son 12 Bar İçinde RVOL Patlaması Şartı (>= 2.5)
             rvol_15m_dd = volume_dd / volume_dd.rolling(20).mean()
             rvol_curr_dd = rvol_15m_dd.iloc[-1]
             son_rvol = max(son_rvol, rvol_curr_dd)
-            is_rvol_burst = rvol_curr_dd >= 2.5
+            
+            is_rvol_12bar_burst = (rvol_15m_dd.tail(12) >= 2.5).any()
+            is_rvol_extreme_burst = rvol_curr_dd >= 3.5  # Anlık çok büyük patlama bonusu için
 
-            if is_dalga_dip and is_mfi_valid and is_cmf_valid and is_di_valid and is_hull_span_valid:
+            if is_dalga_dip and is_mfi_valid and is_cmf_valid and is_di_valid and is_hull_span_valid and is_rvol_12bar_burst:
               modul_puani = 25.0
-              if is_rvol_burst:
-                modul_puani += 15.0
+              if is_rvol_extreme_burst:
+                modul_puani += 15.0  # Ekstra aşırı hacim bonusu
 
               if kayit_guncelle("deniz_dalgasi_hibrit"):
                 tetiklenen_str.append("DENİZ DALGASI")
@@ -651,7 +647,7 @@ def run_scanner():
           if "TEHLİKELİ HİBRİT" in strat_upper:
             mesaj_satirlari.append(f"• 🟢🟢🟢 {strat} (MFI:{item['mfi']:.1f} | +DI:{item['plus_di']:.1f} | CMF:{item['cmf']:.2f} | Konum:%{item['konum']:.1f})")
           elif "DENİZ DALGASI" in strat_upper:
-            mesaj_satirlari.append(f"• 🛡⚡ {strat} (RVOL:{item['rvol']:.2f} | MFI:{item['mfi']:.1f} | +DI:{item['plus_di']:.1f} | Konum:%{item['konum']:.1f})")
+            mesaj_satirlari.append(f"• 🛡⚡ {strat} (RVOL(12b):{item['rvol']:.2f} | MFI:{item['mfi']:.1f} | +DI:{item['plus_di']:.1f} | Konum:%{item['konum']:.1f})")
           elif "DELİRDİ" in strat_upper and "1 SAAT" in strat_upper:
             mesaj_satirlari.append(f"• 💥💥💥 {strat} (RVOL:{item['rvol']:.2f} | MFI:{item['mfi']:.1f} | +DI:{item['plus_di']:.1f} | Konum:%{item['konum']:.1f})")
           elif "SÜPER 15 CROSS" in strat_upper:
