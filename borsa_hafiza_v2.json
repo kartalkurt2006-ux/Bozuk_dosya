@@ -698,8 +698,8 @@
             "TKFEN.IS": {
                 "zaman": 1793026935.997113,
                 "ilk_fiyat": 182.3000030517578,
-                "son_fiyat": 191.39999389648438,
-                "tekrar_sayisi": 6
+                "son_fiyat": 198.5,
+                "tekrar_sayisi": 7
             },
             "YEOTK.IS": {
                 "zaman": 1793026935.997113,
@@ -1148,8 +1148,8 @@
             "TSKB.IS": {
                 "zaman": 1793345458.040634,
                 "ilk_fiyat": 9.020000457763672,
-                "son_fiyat": 9.25,
-                "tekrar_sayisi": 5
+                "son_fiyat": 9.220000267028809,
+                "tekrar_sayisi": 6
             },
             "ATATP.IS": {
                 "zaman": 1793370537.2396176,
@@ -1233,6 +1233,30 @@
                 "zaman": 1793617798.7053394,
                 "ilk_fiyat": 47.34000015258789,
                 "son_fiyat": 47.34000015258789,
+                "tekrar_sayisi": 1
+            },
+            "DZGYO.IS": {
+                "zaman": 1793622615.5071435,
+                "ilk_fiyat": 6.78000020980835,
+                "son_fiyat": 6.78000020980835,
+                "tekrar_sayisi": 1
+            },
+            "MAVI.IS": {
+                "zaman": 1793622615.5071435,
+                "ilk_fiyat": 34.0,
+                "son_fiyat": 34.0,
+                "tekrar_sayisi": 1
+            },
+            "MEDTR.IS": {
+                "zaman": 1793622615.5071435,
+                "ilk_fiyat": 17.559999465942383,
+                "son_fiyat": 17.559999465942383,
+                "tekrar_sayisi": 1
+            },
+            "REEDR.IS": {
+                "zaman": 1793622615.5071435,
+                "ilk_fiyat": 2.640000104904175,
+                "son_fiyat": 2.640000104904175,
                 "tekrar_sayisi": 1
             }
         },
@@ -2012,6 +2036,18 @@
                 "ilk_fiyat": 41.36000061035156,
                 "son_fiyat": 41.36000061035156,
                 "tekrar_sayisi": 15
+            },
+            "MERCN.IS": {
+                "zaman": 1793622615.5071435,
+                "ilk_fiyat": 2.740000009536743,
+                "son_fiyat": 2.740000009536743,
+                "tekrar_sayisi": 1
+            },
+            "REEDR.IS": {
+                "zaman": 1793622615.5071435,
+                "ilk_fiyat": 2.640000104904175,
+                "son_fiyat": 2.640000104904175,
+                "tekrar_sayisi": 1
             }
         },
         "deniz_dalgasi_hibrit": {
@@ -2219,6 +2255,12 @@
                 "zaman": 1793617798.7053394,
                 "ilk_fiyat": 220.0,
                 "son_fiyat": 220.0,
+                "tekrar_sayisi": 1
+            },
+            "PAPIL.IS": {
+                "zaman": 1793622615.5071435,
+                "ilk_fiyat": 5.170000076293945,
+                "son_fiyat": 5.170000076293945,
                 "tekrar_sayisi": 1
             }
         }
