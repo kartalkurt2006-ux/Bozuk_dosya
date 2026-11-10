@@ -481,8 +481,8 @@
             "MEPET.IS": {
                 "zaman": 1793747819.6315496,
                 "ilk_fiyat": 14.970000267028809,
-                "son_fiyat": 14.970000267028809,
-                "tekrar_sayisi": 1
+                "son_fiyat": 16.8799991607666,
+                "tekrar_sayisi": 2
             },
             "MPARK.IS": {
                 "zaman": 1793747819.6315496,
@@ -523,8 +523,8 @@
             "ALARK.IS": {
                 "zaman": 1793829289.8619328,
                 "ilk_fiyat": 99.69999694824219,
-                "son_fiyat": 104.80000305175781,
-                "tekrar_sayisi": 2
+                "son_fiyat": 104.69999694824219,
+                "tekrar_sayisi": 3
             },
             "ATLAS.IS": {
                 "zaman": 1793829289.8619328,
@@ -1243,8 +1243,8 @@
             "GENIL.IS": {
                 "zaman": 1794208795.0479946,
                 "ilk_fiyat": 4.429999828338623,
-                "son_fiyat": 4.429999828338623,
-                "tekrar_sayisi": 1
+                "son_fiyat": 4.449999809265137,
+                "tekrar_sayisi": 2
             },
             "GLCVY.IS": {
                 "zaman": 1794208795.0479946,
@@ -1483,8 +1483,8 @@
             "SUWEN.IS": {
                 "zaman": 1794208795.0479946,
                 "ilk_fiyat": 4.809999942779541,
-                "son_fiyat": 4.809999942779541,
-                "tekrar_sayisi": 1
+                "son_fiyat": 4.920000076293945,
+                "tekrar_sayisi": 2
             },
             "TATGD.IS": {
                 "zaman": 1794208795.0479946,
@@ -1615,8 +1615,8 @@
             "ULAS.IS": {
                 "zaman": 1794221270.252289,
                 "ilk_fiyat": 12.0600004196167,
-                "son_fiyat": 12.210000038146973,
-                "tekrar_sayisi": 3
+                "son_fiyat": 12.710000038146973,
+                "tekrar_sayisi": 4
             },
             "AKSGY.IS": {
                 "zaman": 1794231862.587019,
@@ -1772,6 +1772,12 @@
                 "zaman": 1794307268.0618427,
                 "ilk_fiyat": 97.8499984741211,
                 "son_fiyat": 97.8499984741211,
+                "tekrar_sayisi": 1
+            },
+            "GOLTS.IS": {
+                "zaman": 1794320713.5773373,
+                "ilk_fiyat": 243.39999389648438,
+                "son_fiyat": 243.39999389648438,
                 "tekrar_sayisi": 1
             }
         },
@@ -1935,8 +1941,8 @@
             "MEPET.IS": {
                 "zaman": 1793747819.6315496,
                 "ilk_fiyat": 14.970000267028809,
-                "son_fiyat": 14.970000267028809,
-                "tekrar_sayisi": 1
+                "son_fiyat": 16.8799991607666,
+                "tekrar_sayisi": 2
             },
             "MERCN.IS": {
                 "zaman": 1793747819.6315496,
@@ -2981,8 +2987,8 @@
             "LUKSK.IS": {
                 "zaman": 1793690682.8825302,
                 "ilk_fiyat": 43.119998931884766,
-                "son_fiyat": 43.119998931884766,
-                "tekrar_sayisi": 1
+                "son_fiyat": 58.150001525878906,
+                "tekrar_sayisi": 2
             },
             "PETUN.IS": {
                 "zaman": 1793690682.8825302,
@@ -3449,8 +3455,8 @@
             "GOLTS.IS": {
                 "zaman": 1794208795.0479946,
                 "ilk_fiyat": 228.0,
-                "son_fiyat": 228.0,
-                "tekrar_sayisi": 1
+                "son_fiyat": 243.39999389648438,
+                "tekrar_sayisi": 2
             },
             "GOZDE.IS": {
                 "zaman": 1794208795.0479946,
@@ -3690,6 +3696,12 @@
                 "zaman": 1794307268.0618427,
                 "ilk_fiyat": 15.180000305175781,
                 "son_fiyat": 15.180000305175781,
+                "tekrar_sayisi": 1
+            },
+            "SAFKR.IS": {
+                "zaman": 1794320713.5773373,
+                "ilk_fiyat": 14.020000457763672,
+                "son_fiyat": 14.020000457763672,
                 "tekrar_sayisi": 1
             }
         }
