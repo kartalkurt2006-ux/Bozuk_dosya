@@ -481,8 +481,8 @@
             "MEPET.IS": {
                 "zaman": 1793747819.6315496,
                 "ilk_fiyat": 14.970000267028809,
-                "son_fiyat": 16.8799991607666,
-                "tekrar_sayisi": 2
+                "son_fiyat": 16.940000534057617,
+                "tekrar_sayisi": 3
             },
             "MPARK.IS": {
                 "zaman": 1793747819.6315496,
@@ -523,8 +523,8 @@
             "ALARK.IS": {
                 "zaman": 1793829289.8619328,
                 "ilk_fiyat": 99.69999694824219,
-                "son_fiyat": 104.69999694824219,
-                "tekrar_sayisi": 3
+                "son_fiyat": 104.4000015258789,
+                "tekrar_sayisi": 4
             },
             "ATLAS.IS": {
                 "zaman": 1793829289.8619328,
@@ -1615,8 +1615,8 @@
             "ULAS.IS": {
                 "zaman": 1794221270.252289,
                 "ilk_fiyat": 12.0600004196167,
-                "son_fiyat": 12.710000038146973,
-                "tekrar_sayisi": 4
+                "son_fiyat": 12.6899995803833,
+                "tekrar_sayisi": 5
             },
             "AKSGY.IS": {
                 "zaman": 1794231862.587019,
@@ -1777,8 +1777,8 @@
             "GOLTS.IS": {
                 "zaman": 1794320713.5773373,
                 "ilk_fiyat": 243.39999389648438,
-                "son_fiyat": 243.39999389648438,
-                "tekrar_sayisi": 1
+                "son_fiyat": 239.6999969482422,
+                "tekrar_sayisi": 2
             }
         },
         "deli_gitan_1h": {
@@ -1941,8 +1941,8 @@
             "MEPET.IS": {
                 "zaman": 1793747819.6315496,
                 "ilk_fiyat": 14.970000267028809,
-                "son_fiyat": 16.8799991607666,
-                "tekrar_sayisi": 2
+                "son_fiyat": 16.940000534057617,
+                "tekrar_sayisi": 3
             },
             "MERCN.IS": {
                 "zaman": 1793747819.6315496,
@@ -2049,8 +2049,8 @@
             "DERHL.IS": {
                 "zaman": 1793883890.2196493,
                 "ilk_fiyat": 1.3200000524520874,
-                "son_fiyat": 1.3200000524520874,
-                "tekrar_sayisi": 1
+                "son_fiyat": 1.350000023841858,
+                "tekrar_sayisi": 2
             },
             "MRGYO.IS": {
                 "zaman": 1793883890.2196493,
@@ -2248,6 +2248,36 @@
                 "zaman": 1794307268.0618427,
                 "ilk_fiyat": 80.0,
                 "son_fiyat": 80.0,
+                "tekrar_sayisi": 1
+            },
+            "CEOEM.IS": {
+                "zaman": 1794322797.3215022,
+                "ilk_fiyat": 17.790000915527344,
+                "son_fiyat": 17.790000915527344,
+                "tekrar_sayisi": 1
+            },
+            "ERSU.IS": {
+                "zaman": 1794322797.3215022,
+                "ilk_fiyat": 15.300000190734863,
+                "son_fiyat": 15.300000190734863,
+                "tekrar_sayisi": 1
+            },
+            "GARFA.IS": {
+                "zaman": 1794322797.3215022,
+                "ilk_fiyat": 23.34000015258789,
+                "son_fiyat": 23.34000015258789,
+                "tekrar_sayisi": 1
+            },
+            "SEGYO.IS": {
+                "zaman": 1794322797.3215022,
+                "ilk_fiyat": 2.440000057220459,
+                "son_fiyat": 2.440000057220459,
+                "tekrar_sayisi": 1
+            },
+            "SUWEN.IS": {
+                "zaman": 1794322797.3215022,
+                "ilk_fiyat": 4.800000190734863,
+                "son_fiyat": 4.800000190734863,
                 "tekrar_sayisi": 1
             }
         },
@@ -2897,8 +2927,8 @@
             "ALARK.IS": {
                 "zaman": 1793690682.8825302,
                 "ilk_fiyat": 95.8499984741211,
-                "son_fiyat": 95.8499984741211,
-                "tekrar_sayisi": 2
+                "son_fiyat": 104.4000015258789,
+                "tekrar_sayisi": 3
             },
             "ARENA.IS": {
                 "zaman": 1793690682.8825302,
@@ -3701,8 +3731,8 @@
             "SAFKR.IS": {
                 "zaman": 1794320713.5773373,
                 "ilk_fiyat": 14.020000457763672,
-                "son_fiyat": 14.020000457763672,
-                "tekrar_sayisi": 1
+                "son_fiyat": 13.960000038146973,
+                "tekrar_sayisi": 2
             }
         }
     }
