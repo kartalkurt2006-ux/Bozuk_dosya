@@ -265,8 +265,8 @@
             "IDGYO.IS": {
                 "zaman": 1794815226.811744,
                 "ilk_fiyat": 2.450000047683716,
-                "son_fiyat": 2.450000047683716,
-                "tekrar_sayisi": 1
+                "son_fiyat": 3.680000066757202,
+                "tekrar_sayisi": 2
             },
             "IHLAS.IS": {
                 "zaman": 1794815226.811744,
@@ -1511,8 +1511,8 @@
             "GRSEL.IS": {
                 "zaman": 1795431420.9297976,
                 "ilk_fiyat": 238.39999389648438,
-                "son_fiyat": 238.39999389648438,
-                "tekrar_sayisi": 1
+                "son_fiyat": 239.3000030517578,
+                "tekrar_sayisi": 2
             }
         }
     }
