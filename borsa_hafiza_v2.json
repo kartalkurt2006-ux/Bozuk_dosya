@@ -871,14 +871,14 @@
             "AKSA.IS": {
                 "zaman": 1795521477.7464142,
                 "ilk_fiyat": 11.109999656677246,
-                "son_fiyat": 11.109999656677246,
-                "tekrar_sayisi": 1
+                "son_fiyat": 11.199999809265137,
+                "tekrar_sayisi": 2
             },
             "AYDEM.IS": {
                 "zaman": 1795521477.7464142,
                 "ilk_fiyat": 20.899999618530273,
                 "son_fiyat": 20.899999618530273,
-                "tekrar_sayisi": 1
+                "tekrar_sayisi": 2
             }
         },
         "deli_gitan_1h": {
@@ -1463,6 +1463,12 @@
                 "ilk_fiyat": 6.510000228881836,
                 "son_fiyat": 6.510000228881836,
                 "tekrar_sayisi": 1
+            },
+            "AKSA.IS": {
+                "zaman": 1795525877.7770114,
+                "ilk_fiyat": 11.199999809265137,
+                "son_fiyat": 11.199999809265137,
+                "tekrar_sayisi": 1
             }
         },
         "cekirge_15m": {},
@@ -1551,6 +1557,12 @@
                 "zaman": 1795293073.9575217,
                 "ilk_fiyat": 3.7300000190734863,
                 "son_fiyat": 3.7300000190734863,
+                "tekrar_sayisi": 1
+            },
+            "BIOEN.IS": {
+                "zaman": 1795525877.7770114,
+                "ilk_fiyat": 14.010000228881836,
+                "son_fiyat": 14.010000228881836,
                 "tekrar_sayisi": 1
             }
         },
@@ -1709,8 +1721,8 @@
             "ERSU.IS": {
                 "zaman": 1795176434.0596044,
                 "ilk_fiyat": 16.850000381469727,
-                "son_fiyat": 15.640000343322754,
-                "tekrar_sayisi": 2
+                "son_fiyat": 16.0,
+                "tekrar_sayisi": 3
             },
             "AVPGY.IS": {
                 "zaman": 1795293073.9575217,
@@ -1836,6 +1848,18 @@
                 "zaman": 1795507772.0545776,
                 "ilk_fiyat": 6.510000228881836,
                 "son_fiyat": 6.510000228881836,
+                "tekrar_sayisi": 1
+            },
+            "AKSA.IS": {
+                "zaman": 1795525877.7770114,
+                "ilk_fiyat": 11.199999809265137,
+                "son_fiyat": 11.199999809265137,
+                "tekrar_sayisi": 1
+            },
+            "ARTMS.IS": {
+                "zaman": 1795525877.7770114,
+                "ilk_fiyat": 22.31999969482422,
+                "son_fiyat": 22.31999969482422,
                 "tekrar_sayisi": 1
             }
         }
