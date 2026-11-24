@@ -577,8 +577,8 @@
             "EGGUB.IS": {
                 "zaman": 1794825089.8563833,
                 "ilk_fiyat": 82.25,
-                "son_fiyat": 94.0,
-                "tekrar_sayisi": 2
+                "son_fiyat": 95.94999694824219,
+                "tekrar_sayisi": 3
             },
             "IHEVA.IS": {
                 "zaman": 1794825089.8563833,
@@ -866,6 +866,18 @@
                 "zaman": 1795507772.0545776,
                 "ilk_fiyat": 6.510000228881836,
                 "son_fiyat": 6.510000228881836,
+                "tekrar_sayisi": 1
+            },
+            "AKSA.IS": {
+                "zaman": 1795521477.7464142,
+                "ilk_fiyat": 11.109999656677246,
+                "son_fiyat": 11.109999656677246,
+                "tekrar_sayisi": 1
+            },
+            "AYDEM.IS": {
+                "zaman": 1795521477.7464142,
+                "ilk_fiyat": 20.899999618530273,
+                "son_fiyat": 20.899999618530273,
                 "tekrar_sayisi": 1
             }
         },
@@ -1697,8 +1709,8 @@
             "ERSU.IS": {
                 "zaman": 1795176434.0596044,
                 "ilk_fiyat": 16.850000381469727,
-                "son_fiyat": 16.850000381469727,
-                "tekrar_sayisi": 1
+                "son_fiyat": 15.640000343322754,
+                "tekrar_sayisi": 2
             },
             "AVPGY.IS": {
                 "zaman": 1795293073.9575217,
